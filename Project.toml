@@ -1,0 +1,11 @@
+name = "StateSpacePartitions"
+uuid = "5427e241-e665-444a-8288-8739a7fd2cc0"
+authors = ["Andre Souza <andrenogueirasouza@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+ParallelKMeans = "42b8e9d4-006b-409a-8472-7f34b3fb58af"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
