@@ -1,13 +1,7 @@
-using StateSpacePartitions, ProgressBars, Random 
+using StateSpacePartitions, ProgressBars, Random, GLMakie 
 include("timestepping_utils.jl")
+include("visualization_utils.jl")
 Random.seed!(1234)
-
-function lorenz!(ṡ, s)
-    ṡ[1] = 10.0 * (s[2] - s[1])
-    ṡ[2] = s[1] * (28.0 - s[3]) - s[2]
-    ṡ[3] = s[1] * s[2] - (8 / 3) * s[3]
-    return ṡ
-end
 
 function lorenz(s)
     x, y, z = s
@@ -41,3 +35,5 @@ for i in ProgressBar(eachindex(partitions))
 end
 
 all(state_space_partitions.partitions .== partitions)
+
+visualize(timeseries, state_space_partitions)

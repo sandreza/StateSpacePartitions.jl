@@ -68,10 +68,15 @@ function unstructured_tree(timeseries, p_min; threshold = 2)
 end
 
 function determine_partition(timeseries, tree_type::Tree{Val{false}, S}; override = false) where S
-    if haskey(tree_type.arguments, :minimum_probability)
-        minimum_probability = tree_type.arguments.minimum_probability 
-    elseif istype(tree_type.arguments, Number)
-        minimum_probability = Tree.arguments
+    if typeof(tree_type.arguments) <: NamedTuple
+        if haskey(tree_type.arguments, :minimum_probability)
+            minimum_probability = tree_type.arguments.minimum_probability 
+        else
+            @warn "no minimum probability specified, using 0.01"
+            minimum_probability = 0.01
+        end
+    elseif typeof(tree_type.arguments) <: Number
+        minimum_probability = tree_type.arguments
     else
         @warn "no minimum probability specified, using 0.01"
         minimum_probability = 0.01
