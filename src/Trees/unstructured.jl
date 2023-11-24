@@ -76,6 +76,12 @@ function determine_partition(timeseries, tree_type::Tree{Val{false}, S}) where S
         @warn "no minimum probability specified, using 0.01"
         minimum_probability = 0.01
     end
+    Nmax = 100 * round(Int, 1/ minimum_probability)
+    if size(timeseries)[2] > Nmax
+        @warn "timeseries too long, truncating to roughly $Nmax for determining embedding"
+        skip = round(Int, size(timeseries)[2] / Nmax)
+        timeseries = timeseries[:, 1:skip:end]
+    end
     F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, minimum_probability)
     embedding = UnstructuredTree(P4, C, P3)
     return embedding
