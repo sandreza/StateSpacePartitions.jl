@@ -67,7 +67,7 @@ function unstructured_tree(timeseries, p_min; threshold = 2)
     return F, G, H, P2, P3, P4, C, CC, P5
 end
 
-function determine_partition(timeseries, tree_type::Tree{Val{false}, S}) where S
+function determine_partition(timeseries, tree_type::Tree{Val{false}, S}; override = false) where S
     if haskey(tree_type.arguments, :minimum_probability)
         minimum_probability = tree_type.arguments.minimum_probability 
     elseif istype(tree_type.arguments, Number)
@@ -77,7 +77,7 @@ function determine_partition(timeseries, tree_type::Tree{Val{false}, S}) where S
         minimum_probability = 0.01
     end
     Nmax = 100 * round(Int, 1/ minimum_probability)
-    if size(timeseries)[2] > Nmax
+    if (size(timeseries)[2] > Nmax) & !(override)
         @warn "timeseries too long, truncating to roughly $Nmax for determining embedding"
         skip = round(Int, size(timeseries)[2] / Nmax)
         timeseries = timeseries[:, 1:skip:end]

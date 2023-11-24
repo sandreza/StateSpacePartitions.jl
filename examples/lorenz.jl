@@ -18,7 +18,7 @@ function lorenz(s)
 end
 
 dt = 0.1 
-iterations = 10^7
+iterations = 10^5
 
 timeseries = zeros(3, iterations)
 timeseries[:, 1] .= [14.0, 20.0, 27.0]
