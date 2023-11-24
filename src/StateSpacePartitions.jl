@@ -7,22 +7,21 @@ include("Trees/Trees.jl")
 
 export StateSpacePartition
 
-import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree
+import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
 struct StateSpacePartition{E, P}
     embedding::E 
     partitions::P 
 end
 
-function StateSpacePartition(timeseries; pmin = 0.01)
+function StateSpacePartition(timeseries; method = Tree())
     @info "determine partitioning function "
-    F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, pmin)
-    embedding = UnstructuredTree(P4, C, P3)
-    me = Int64[]
-    @info "computing markov embedding"
-    for state in ProgressBar(eachcol(timeseries))
-        push!(me, embedding(state))
+    embedding = determine_partition(timeseries, method)
+    partitions = zeros(Int64, size(timeseries)[2])
+    @info "computing partition timeseries"
+    for i in ProgressBar(eachindex(partitions))
+        @inbounds partitions[i] = embedding(timeseries[:, i])
     end
-    return StateSpacePartition(embedding, me)
+    return StateSpacePartition(embedding, partitions)
 end
 
 end # module StateSpacePartitions

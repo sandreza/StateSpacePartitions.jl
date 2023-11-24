@@ -25,6 +25,7 @@ function split(timeseries, indices, n_min; numstates = 2)
     return [[]], [[]]
 end
 
+# modification of code from Peter J. Schmid
 function unstructured_tree(timeseries, p_min; threshold = 2)
     n = size(timeseries)[2]
     n_min = floor(Int, threshold * p_min * n)
@@ -64,4 +65,18 @@ function unstructured_tree(timeseries, p_min; threshold = 2)
         end
     end
     return F, G, H, P2, P3, P4, C, CC, P5
+end
+
+function determine_partition(timeseries, tree_type::Tree{Val{false}, S}) where S
+    if haskey(tree_type.arguments, :minimum_probability)
+        minimum_probability = tree_type.arguments.minimum_probability 
+    elseif istype(tree_type.arguments, Number)
+        minimum_probability = Tree.arguments
+    else
+        @warn "no minimum probability specified, using 0.01"
+        minimum_probability = 0.01
+    end
+    F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, minimum_probability)
+    embedding = UnstructuredTree(P4, C, P3)
+    return embedding
 end

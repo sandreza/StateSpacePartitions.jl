@@ -1,4 +1,6 @@
-using StateSpacePartitions, ProgressBars
+using StateSpacePartitions, ProgressBars, Random 
+
+Random.seed!(1234)
 
 function lorenz!(ṡ, s)
     ṡ[1] = 10.0 * (s[2] - s[1])
@@ -30,3 +32,15 @@ for i in ProgressBar(2:iterations)
     timeseries[:, i] .= state
 end
 state_space_partitions = StateSpacePartition(timeseries)
+
+Random.seed!(1234)
+@info "determine partitioning function "
+method = Tree()
+embedding = determine_partition(timeseries, method)
+partitions = zeros(Int64, size(timeseries)[2])
+@info "computing partition timeseries"
+for i in ProgressBar(eachindex(partitions))
+    @inbounds partitions[i] = embedding(timeseries[:, i])
+end
+
+all(state_space_partitions.partitions .== partitions)
