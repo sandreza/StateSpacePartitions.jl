@@ -12,7 +12,7 @@ function rossler(s; a = 0.2, b = 0.2, c = 5.7)
 end
 
 dt = 0.1
-iterations = 10^4
+iterations = 10^6
 
 timeseries = zeros(3, iterations)
 timeseries[:, 1] .= [ -8.605439656793074, -1.6791366418368037, 0.013910051541844323] # a point on the attractor
@@ -22,12 +22,23 @@ for i in ProgressBar(2:iterations)
     timeseries[:, i] .= step.xⁿ⁺¹
 end
 
-minimum_probability = 0.03
-state_space_partitions = StateSpacePartition(timeseries; method = Tree(false, minimum_probability))
+levels = 5
+minimum_probability = 1/2^(levels + 1)
+tree_type = Tree(false, minimum_probability)
+state_space_partitions = StateSpacePartition(timeseries; method = tree_type)
 
 length(union(state_space_partitions.partitions)) == maximum(union(state_space_partitions.partitions))
 visualize(timeseries, state_space_partitions)
-
+##
+tree_type = Tree(true, levels)
+state_space_partitions_2 = StateSpacePartition(timeseries; method = tree_type)
+##
+fig = Figure() 
+ax = LScene(fig[1,1]; show_axis=false)
+scatter!(ax, timeseries, color=state_space_partitions_2.partitions, colormap=:glasbey_hv_n256, markersize=10)
+ax = LScene(fig[1,2]; show_axis=false)
+scatter!(ax, timeseries, color=state_space_partitions.partitions, colormap=:glasbey_hv_n256, markersize=10)
+display(fig)
 ##
 function graph_from_PI(PI)
     N = maximum([maximum([PI[i][1], PI[i][2]]) for i in eachindex(PI)])
