@@ -11,7 +11,7 @@ function rossler(s; a = 0.2, b = 0.2, c = 5.7)
     return [ẋ, ẏ, ż]
 end
 
-dt = 0.1
+dt = 0.2
 iterations = 10^5
 
 timeseries = zeros(3, iterations)
@@ -22,8 +22,8 @@ for i in ProgressBar(2:iterations)
     timeseries[:, i] .= step.xⁿ⁺¹
 end
 
-levels = 7
-minimum_probability = 1/2^(levels + 1)
+levels = 9
+minimum_probability = 0.75/2^(levels)
 tree_type = Tree(false, minimum_probability)
 state_space_partitions = StateSpacePartition(timeseries; method = tree_type)
 
