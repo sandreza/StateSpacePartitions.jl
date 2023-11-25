@@ -13,9 +13,9 @@ struct StateSpacePartition{E, P}
     partitions::P 
 end
 
-function StateSpacePartition(timeseries; method = Tree())
+function StateSpacePartition(timeseries; method = Tree(), override = false)
     @info "determine partitioning function "
-    embedding = determine_partition(timeseries, method)
+    embedding = determine_partition(timeseries, method; override = override)
     partitions = zeros(Int64, size(timeseries)[2])
     @info "computing partition timeseries"
     for i in ProgressBar(eachindex(partitions))

@@ -87,6 +87,10 @@ function determine_partition(timeseries, tree_type::Tree{Val{false}, S}; overrid
         skip = round(Int, size(timeseries)[2] / Nmax)
         timeseries = timeseries[:, 1:skip:end]
     end
+    if (10/(size(timeseries)[2]) > minimum_probability) & !(override)
+        @warn "minimum probabity too small, using 10x the reciprocal of the number of points"
+        minimum_probability = 10 / size(timeseries)[2]
+    end
     F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, minimum_probability)
     embedding = UnstructuredTree(P4, C, P3)
     return embedding
