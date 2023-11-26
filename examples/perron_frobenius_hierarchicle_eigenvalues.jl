@@ -20,8 +20,8 @@ function inverse_iteration(A, x0, μ0; tol = 1e-6, maxiter_eig = 2, maxiter_solv
     return x, λ + μ0
 end
 
-coarsen(ssp::StateSpacePartition, levels) = coarsen(ssp.partitions, levels)
-function coarsen(partitions::Vector{Int64}, levels)
+coarsen(ssp::StateSpacePartition{S, A}, levels) where {S <: BinaryTree, A} = binary_coarsen(ssp.partitions, levels)
+function binary_coarsen(partitions::Vector{Int64}, levels)
     return (partitions .- 1) .÷ 2^levels .+ 1
 end
 function extract_coarse_guess(coarse_pfo, levels, index)
