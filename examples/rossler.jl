@@ -1,15 +1,8 @@
 using StateSpacePartitions, ProgressBars, Random, GLMakie, SparseArrays
+include("chaotic_systems.jl")
 include("timestepping_utils.jl")
 include("visualization_utils.jl")
 Random.seed!(1234)
-
-function rossler(s; a = 0.2, b = 0.2, c = 5.7)
-    x, y, z = s
-    ẋ = -y - z
-    ẏ = x + a * y
-    ż = b + z * (x - c)
-    return [ẋ, ẏ, ż]
-end
 
 dt = 0.2
 iterations = 10^5
@@ -22,7 +15,7 @@ for i in ProgressBar(2:iterations)
     timeseries[:, i] .= step.xⁿ⁺¹
 end
 
-levels = 9
+levels = 4
 minimum_probability = 0.75/2^(levels)
 tree_type = Tree(false, minimum_probability)
 state_space_partitions = StateSpacePartition(timeseries; method = tree_type)

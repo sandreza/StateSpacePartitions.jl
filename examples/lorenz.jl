@@ -1,17 +1,10 @@
 using StateSpacePartitions, ProgressBars, Random, GLMakie 
+include("chaotic_systems.jl")
 include("timestepping_utils.jl")
 include("visualization_utils.jl")
 Random.seed!(1234)
 
-function lorenz(s)
-    x, y, z = s
-    ẋ = 10.0 * (y - x)
-    ẏ = x * (28.0 - z) - y
-    ż = x * y - (8 / 3) * z
-    return [ẋ, ẏ, ż]
-end
-
-dt = 0.1 
+dt = 0.01 
 iterations = 10^5
 
 timeseries = zeros(3, iterations)
