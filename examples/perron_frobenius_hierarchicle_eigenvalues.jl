@@ -20,6 +20,7 @@ function inverse_iteration(A, x0, μ0; tol = 1e-6, maxiter_eig = 2, maxiter_solv
     return x, λ + μ0
 end
 
+# no need for binary coarsen function
 coarsen(ssp::StateSpacePartition{S, A}, levels) where {S <: BinaryTree, A} = binary_coarsen(ssp.partitions, levels)
 function binary_coarsen(partitions::Vector{Int64}, levels)
     return (partitions .- 1) .÷ 2^levels .+ 1
