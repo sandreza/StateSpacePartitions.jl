@@ -5,7 +5,7 @@ include("visualization_utils.jl")
 Random.seed!(1234)
 
 dt = 0.2
-iterations = 10^5
+iterations = 10^4
 
 timeseries = zeros(3, iterations)
 timeseries[:, 1] .= [ -8.605439656793074, -1.6791366418368037, 0.013910051541844323] # a point on the attractor
