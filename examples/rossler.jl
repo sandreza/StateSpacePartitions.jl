@@ -33,25 +33,6 @@ ax = LScene(fig[1,2]; show_axis=false)
 scatter!(ax, timeseries, color=state_space_partitions_2.partitions, colormap=:glasbey_hv_n256, markersize=10)
 display(fig)
 ##
-function graph_from_PI(PI)
-    N = maximum([maximum([PI[i][1], PI[i][2]]) for i in eachindex(PI)])
-    adj = spzeros(Int64, N, N)
-    adj_mod = spzeros(Float64, N, N)
-    for i in ProgressBar(eachindex(PI))
-        ii = PI[i][1]
-        jj = PI[i][2]
-        modularity_value = PI[i][3]
-        adj[ii, jj] += 1
-        adj_mod[ii, jj] = modularity_value
-    end 
-    N = maximum([maximum([PI[i][1], PI[i][2]]) for i in eachindex(PI)])
-    node_labels = zeros(N)
-    for i in eachindex(PI)
-        node_labels[PI[i][2]] = PI[i][3]
-    end
-    
-    return node_labels, adj, adj_mod, length(PI)
-end
 F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, minimum_probability)
 ##
 using GraphMakie, NetworkLayout, Graphs, Printf
