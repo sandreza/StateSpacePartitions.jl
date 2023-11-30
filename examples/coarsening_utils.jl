@@ -23,7 +23,7 @@ function leaf_global_to_local_indices(graph_edges)
     return global_to_local, local_to_global
 end
 
-# This needs improvement
+# This needs improvement, still a bit too slow
 function unstructured_coarsen_edges(graph_edges, probability_minimum, parent_to_children, G, global_to_local)
     tic = time()
     toc = time()

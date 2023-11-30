@@ -10,8 +10,9 @@ include("coarsening_utils.jl")
 include("sparse_chain_hammer.jl")
 Random.seed!(1234)
 
-dt = 0.01 
-iterations = 10^6
+dt = 0.001 
+Tfinal = 10^3
+iterations = round(Int, Tfinal/dt)
 
 timeseries = zeros(3, iterations)
 timeseries[:, 1] .= [14.0, 20.0, 27.0]
@@ -21,9 +22,12 @@ for i in ProgressBar(2:iterations)
     timeseries[:, i] .= step.xⁿ⁺¹
 end
 ##
-p_min = 0.0001 / 4 / 40
+# dt/10 is roughly p_min
+p_min = dt/10
 @info "computing embedding"
-F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, p_min; threshold = 2)
+Nmax = 100 * round(Int, 1/ p_min)
+skip = maximum([round(Int, size(timeseries)[2] / Nmax), 1])
+F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries[:, 1:skip:end], p_min; threshold = 2)
 node_labels, adj, adj_mod, edge_numbers = graph_from_PI(PI);
 G = SimpleDiGraph(adj)
 embedding = UnstructuredTree(P4, C, P3)
@@ -34,7 +38,7 @@ for i in ProgressBar(eachindex(partitions))
 end
 ##
 graph_edges = PI 
-probability_minimum = p_min * 320
+probability_minimum = maximum([0.001, p_min * 10])
 parent_to_children = P3 
 global_to_local = P4
 @info "computing coarse partitioning function"
@@ -45,7 +49,6 @@ for i in ProgressBar(eachindex(coarse_partitions))
     @inbounds coarse_partitions[i] = local_to_local[partitions[i]]
 end
 ##
-skip = 10
 rotate_amount = (0, 11, 0)
 fig = Figure()
 ax = LScene(fig[1,1]; show_axis=false)
@@ -67,15 +70,17 @@ for i in eachindex(refine_koopman)
 end
 ##
 sQ = sparse_generator(partitions; dt = dt)
+avg_diag = tr(sQ) / size(sQ)[1]
+1/(avg_diag * dt)
 
 sQᵀ = sQ'
-μ0 = coarse_λ/2
+μ0 = coarse_λ / 2
 b = copy(refine_koopman)
 A = copy(sQᵀ)
 for i in ProgressBar(eachindex(b))
     A[i, i] = A[i, i] - μ0 
 end
-koopman, λ = inverse_iteration(A, b, μ0; tol = 1e-10, maxiter_eig = 10, maxiter_solve = 2)
+koopman, λ = inverse_iteration(A, b, μ0; tol = 1e-10, maxiter_eig = 100, maxiter_solve = 5)
 λ
 ##
 skip_data = round(Int, 1/(100 * dt))
@@ -85,9 +90,22 @@ coarse_koopman_colors = [real(coarse_koopman[reduced_coarse_partitions[i]]) for 
 koopman_colors_refine = [real(refine_koopman[reduced_partitions[i]]) for i in eachindex(reduced_partitions)]
 koopman_colors = [real(koopman[reduced_partitions[i]]) for i in eachindex(reduced_partitions)]
 ##
+#=
+fig = Figure()
+inds = 1:100:3*100000
+koopman_timeseries = [-real(koopman[partitions[i]]) for i in inds]
+a = quantile(koopman_timeseries, 0.9)
+for i in 1:3
+    ax = Axis(fig[i, 1])
+    scatter!(ax, timeseries[i, inds], color=koopman_timeseries, colormap=:balance, colorrange = (-a, a))
+end
+ax = Axis(fig[4, 1])
+scatter!(ax, koopman_timeseries)
+=#
+##
 fig = Figure(size = (927, 554))
 ms = 5
-a = maximum(koopman) 
+a = maximum(coarse_koopman_colors) 
 rotate_amount = (0, 11, 0)
 ax = LScene(fig[1,1]; show_axis=false)
 scatter!(ax, timeseries[:, 1:skip_data:end], color=coarse_koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
@@ -96,6 +114,7 @@ ax = LScene(fig[1,2]; show_axis=false)
 scatter!(ax, timeseries[:, 1:skip_data:end], color=koopman_colors_refine, colorrange = (-a, a), colormap=:balance, markersize=ms)
 rotate_cam!(ax.scene, rotate_amount)
 ax = LScene(fig[1,3]; show_axis=false)
+a = quantile(koopman_colors, 0.9) 
 scatter!(ax, timeseries[:, 1:skip_data:end], color=koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
 rotate_cam!(ax.scene, rotate_amount)
 display(fig)
@@ -112,7 +131,7 @@ function refine_koopman_mode(local_to_local_coarse, local_to_local_fine, coarse_
     return koopman
 end
 ##
-probability_ranges = reverse((10 .^(range(log10.(2 * p_min), -2, step = 0.1))))
+probability_ranges = reverse((10 .^(range(log10.(2 * p_min), -2, step = 0.19))))
 local_to_locals = []
 coarsened_partitions = Vector{Int64}[]
 for p_min in ProgressBar(probability_ranges)
