@@ -8,10 +8,10 @@ dt = 0.1
 iterations = 10^3
 
 trajectory = zeros(3, iterations)
-trajectory[:, 1] .= [0.1, 0.0, 0.0] # a point on the attractor
+trajectory[:, 1] .= [ -3.5626767040251024, -4.862155361130287, 4.104823253572631] # a point on the attractor
 step = RungeKutta4(3)
 for i in ProgressBar(2:iterations)
-    step(aizawa, trajectory[:, i-1], dt)
+    step(halvorsen, trajectory[:, i-1], dt)
     trajectory[:, i] .= step.xⁿ⁺¹
 end
 

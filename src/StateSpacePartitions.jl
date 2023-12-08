@@ -14,13 +14,13 @@ struct StateSpacePartition{E, P}
 end
 
 
-function StateSpacePartition(timeseries; method = Tree(), override = false)
+function StateSpacePartition(trajectory; method = Tree(), override = false)
     @info "determine partitioning function "
-    embedding = determine_partition(timeseries, method; override = override)
-    partitions = zeros(Int64, size(timeseries)[2])
-    @info "computing partition timeseries"
+    embedding = determine_partition(trajectory, method; override = override)
+    partitions = zeros(Int64, size(trajectory)[2])
+    @info "computing partition trajectory"
     for i in ProgressBar(eachindex(partitions))
-        @inbounds partitions[i] = embedding(timeseries[:, i])
+        @inbounds partitions[i] = embedding(trajectory[:, i])
     end
     return StateSpacePartition(embedding, partitions)
 end

@@ -13,27 +13,27 @@ dt = 0.001
 Tfinal = 10^3
 iterations = round(Int, Tfinal/dt)
 
-timeseries = zeros(3, iterations)
-timeseries[:, 1] .= [ -13.235228023643627, -13.659593873029198, 32.81481308244521]
+trajectory = zeros(3, iterations)
+trajectory[:, 1] .= [ -13.235228023643627, -13.659593873029198, 32.81481308244521]
 step = RungeKutta4(3)
 for i in ProgressBar(2:iterations)
-    step(lorenz, timeseries[:, i-1], dt)
-    timeseries[:, i] .= step.xⁿ⁺¹ # .+ ϵ * randn(3) * sqrt(dt) .* timeseries[:, i-1]
+    step(lorenz, trajectory[:, i-1], dt)
+    trajectory[:, i] .= step.xⁿ⁺¹ # .+ ϵ * randn(3) * sqrt(dt) .* trajectory[:, i-1]
 end
 ##
 Random.seed!(1234)
 p_min = dt/10
 @info "computing embedding"
 Nmax = 100 * round(Int, 1/ p_min)
-skip = maximum([round(Int, size(timeseries)[2] / Nmax), 1])
-F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries[:, 1:skip:end], p_min; threshold = 1.5)
+skip = maximum([round(Int, size(trajectory)[2] / Nmax), 1])
+F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(trajectory[:, 1:skip:end], p_min; threshold = 1.5)
 node_labels, adj, adj_mod, edge_numbers = graph_from_PI(PI);
 G = SimpleDiGraph(adj)
 embedding = UnstructuredTree(P4, C, P3)
-partitions = zeros(Int64, size(timeseries)[2])
-@info "computing partition timeseries"
+partitions = zeros(Int64, size(trajectory)[2])
+@info "computing partition trajectory"
 for i in ProgressBar(eachindex(partitions))
-    @inbounds partitions[i] = embedding(timeseries[:, i])
+    @inbounds partitions[i] = embedding(trajectory[:, i])
 end
 ##
 graph_edges = PI 
@@ -42,8 +42,8 @@ parent_to_children = P3
 global_to_local = P4
 @info "computing coarse partitioning function"
 local_to_local = unstructured_coarsen_edges(graph_edges, probability_minimum, parent_to_children, G, global_to_local)
-coarse_partitions = zeros(Int64, size(timeseries)[2])
-@info "computing coarse partition timeseries"
+coarse_partitions = zeros(Int64, size(trajectory)[2])
+@info "computing coarse partition trajectory"
 for i in ProgressBar(eachindex(coarse_partitions))
     @inbounds coarse_partitions[i] = local_to_local[partitions[i]]
 end
@@ -51,10 +51,10 @@ end
 rotate_amount = (0, 11, 0)
 fig = Figure()
 ax = LScene(fig[1,1]; show_axis=false)
-scatter!(ax, timeseries[:, 1:skip:end], color=partitions[1:skip:end], colormap=:glasbey_hv_n256, markersize=10)
+scatter!(ax, trajectory[:, 1:skip:end], color=partitions[1:skip:end], colormap=:glasbey_hv_n256, markersize=10)
 rotate_cam!(ax.scene, rotate_amount)
 ax = LScene(fig[1,2]; show_axis=false)
-scatter!(ax, timeseries[:, 1:skip:end], color=coarse_partitions[1:skip:end], colormap=:glasbey_hv_n256, markersize=10)
+scatter!(ax, trajectory[:, 1:skip:end], color=coarse_partitions[1:skip:end], colormap=:glasbey_hv_n256, markersize=10)
 rotate_cam!(ax.scene, rotate_amount)
 display(fig)
 ##
@@ -92,14 +92,14 @@ Tf = 30
 last_ind = round(Int, Tf/dt)
 inds = 1:skip_data:last_ind 
 ts = collect(0:dt:Tf)[inds]
-koopman_timeseries = [-real(koopman[partitions[i]]) for i in inds]
-a = quantile(koopman_timeseries, 0.9)
+koopman_trajectory = [-real(koopman[partitions[i]]) for i in inds]
+a = quantile(koopman_trajectory, 0.9)
 for i in 1:3
     ax = Axis(fig[i, 1])
-    scatter!(ax, ts, timeseries[i, inds], color=koopman_timeseries, colormap=:balance, colorrange = (-a, a))
+    scatter!(ax, ts, trajectory[i, inds], color=koopman_trajectory, colormap=:balance, colorrange = (-a, a))
 end
 ax = Axis(fig[4, 1])
-scatter!(ax, ts, koopman_timeseries)
+scatter!(ax, ts, koopman_trajectory)
 =#
 ##
 fig = Figure(size = (927, 554))
@@ -107,14 +107,14 @@ ms = 5
 a = maximum(coarse_koopman_colors) 
 rotate_amount = (0, 11, 0)
 ax = LScene(fig[1,1]; show_axis=false)
-scatter!(ax, timeseries[:, 1:skip_data:end], color=coarse_koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
+scatter!(ax, trajectory[:, 1:skip_data:end], color=coarse_koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
 rotate_cam!(ax.scene, rotate_amount)
 ax = LScene(fig[1,2]; show_axis=false)
-scatter!(ax, timeseries[:, 1:skip_data:end], color=koopman_colors_refine, colorrange = (-a, a), colormap=:balance, markersize=ms)
+scatter!(ax, trajectory[:, 1:skip_data:end], color=koopman_colors_refine, colorrange = (-a, a), colormap=:balance, markersize=ms)
 rotate_cam!(ax.scene, rotate_amount)
 ax = LScene(fig[1,3]; show_axis=false)
 a = quantile(koopman_colors, 0.9) 
-scatter!(ax, timeseries[:, 1:skip_data:end], color=koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
+scatter!(ax, trajectory[:, 1:skip_data:end], color=koopman_colors, colorrange = (-a, a), colormap=:balance, markersize=ms)
 rotate_cam!(ax.scene, rotate_amount)
 display(fig)
 
@@ -140,8 +140,8 @@ for p_min in ProgressBar(probability_ranges)
     global_to_local = P4
     local_to_local = unstructured_coarsen_edges(graph_edges, probability_minimum, parent_to_children, G, global_to_local)
     push!(local_to_locals, local_to_local)
-    coarse_partitions = zeros(Int64, size(timeseries)[2])
-    @info "computing coarse partition timeseries"
+    coarse_partitions = zeros(Int64, size(trajectory)[2])
+    @info "computing coarse partition trajectory"
     for i in ProgressBar(eachindex(coarse_partitions))
         @inbounds coarse_partitions[i] = local_to_local[partitions[i]]
     end
@@ -202,7 +202,7 @@ for i in 1:N^2
         colormap = :balance
         colorrange = (-a, a)
     end
-    scatter!(ax, timeseries[:, 1:skip_data:end], color=koopman_colors, colorrange = colorrange, colormap=colormap, markersize=ms)
+    scatter!(ax, trajectory[:, 1:skip_data:end], color=koopman_colors, colorrange = colorrange, colormap=colormap, markersize=ms)
     rotate_cam!(ax.scene, rotate_amount)
 end
 display(fig)

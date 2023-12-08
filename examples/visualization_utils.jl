@@ -1,8 +1,8 @@
-function visualize(timeseries, partition)
-    if size(timeseries)[1] < 4
+function visualize(trajectory, partition)
+    if size(trajectory)[1] < 4
         fig = Figure()
         ax = LScene(fig[1,1]; show_axis=false)
-        scatter!(ax, timeseries, color=partition, colormap=:glasbey_hv_n256, markersize=10)
+        scatter!(ax, trajectory, color=partition, colormap=:glasbey_hv_n256, markersize=10)
         display(fig)
         return fig
     else 
@@ -11,7 +11,7 @@ function visualize(timeseries, partition)
     end
 end
 
-visualize(timeseries, partition::StateSpacePartition) = visualize(timeseries, partition.partitions)
+visualize(trajectory, partition::StateSpacePartition) = visualize(trajectory, partition.partitions)
 
 function graph_from_PI(PI)
     N = maximum([maximum([PI[i][1], PI[i][2]]) for i in eachindex(PI)])

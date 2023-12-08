@@ -31,21 +31,21 @@ function get_markov_states(centers_list::Vector{Vector{Vector{Float64}}}, level)
 end
 get_markov_states(embedding::BinaryTree, level) = get_markov_states(embedding.markov_states, level)
 
-function binary_split(timeseries)
+function binary_split(trajectory)
     numstates = 2
-    r0 = kmeans(timeseries, numstates; max_iters=10000)
+    r0 = kmeans(trajectory, numstates; max_iters=10000)
     child_0 = (r0.assignments .== 1)
     child_1 = (!).(child_0)
-    children = [view(timeseries, :, child_0), view(timeseries, :, child_1)]
+    children = [view(trajectory, :, child_0), view(trajectory, :, child_1)]
     return r0.centers, children
 end
 
-function binary_tree(timeseries, levels)
+function binary_tree(trajectory, levels)
     parent_views = []
     centers_list = Vector{Vector{Float64}}[]
-    push!(parent_views, timeseries)
+    push!(parent_views, trajectory)
     ## Level 1
-    centers, children = binary_split(timeseries)
+    centers, children = binary_split(trajectory)
     push!(centers_list, [centers[:, 1], centers[:, 2]])
     push!(parent_views, children[1])
     push!(parent_views, children[2])
@@ -70,7 +70,7 @@ function extract_coarse_guess(coarse_pfo, levels, index)
     return ll[index], guess / norm(guess)
 end
 
-function determine_partition(timeseries, tree_type::Tree{Val{true}, S}; override = false) where S
+function determine_partition(trajectory, tree_type::Tree{Val{true}, S}; override = false) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :levels)
             levels = tree_type.arguments.levels
@@ -85,12 +85,12 @@ function determine_partition(timeseries, tree_type::Tree{Val{true}, S}; override
         levels = 7
     end
     Nmax = 1000 * round(Int, 2^levels)
-    if (size(timeseries)[2] > Nmax) & !(override)
-        @warn "timeseries too long, truncating to roughly $Nmax for determining embedding"
-        skip = round(Int, size(timeseries)[2] / Nmax)
-        timeseries = timeseries[:, 1:skip:end]
+    if (size(trajectory)[2] > Nmax) & !(override)
+        @warn "trajectory too long, truncating to roughly $Nmax for determining embedding"
+        skip = round(Int, size(trajectory)[2] / Nmax)
+        trajectory = trajectory[:, 1:skip:end]
     end
-    centers_list, levels = binary_tree(timeseries, levels)
+    centers_list, levels = binary_tree(trajectory, levels)
     embedding = BinaryTree(centers_list, levels)
     return embedding
 end

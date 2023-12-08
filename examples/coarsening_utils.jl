@@ -141,23 +141,23 @@ end
 dt = 0.01 
 iterations = 10^5
 
-timeseries = zeros(3, iterations)
-timeseries[:, 1] .= [14.0, 20.0, 27.0]
+trajectory = zeros(3, iterations)
+trajectory[:, 1] .= [14.0, 20.0, 27.0]
 step = RungeKutta4(3)
 for i in ProgressBar(2:iterations)
-    step(lorenz, timeseries[:, i-1], dt)
-    timeseries[:, i] .= step.xⁿ⁺¹
+    step(lorenz, trajectory[:, i-1], dt)
+    trajectory[:, i] .= step.xⁿ⁺¹
 end
 
 p_min = 0.01
 
 ##
-F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, p_min; threshold = 2)
+F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(trajectory, p_min; threshold = 2)
 node_labels, adj, adj_mod, edge_numbers = graph_from_PI(PI);
 G = SimpleDiGraph(adj)
 
 p_min = 0.01
-F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, p_min; threshold = 2)
+F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(trajectory, p_min; threshold = 2)
 node_labels, adj, adj_mod, edge_numbers = graph_from_PI(PI);
 G = SimpleDiGraph(adj)
 graph_edges = PI 

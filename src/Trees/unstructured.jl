@@ -15,9 +15,9 @@ function (embedding::UnstructuredTree)(state)
     return embedding.leafmap[current_index]
 end
 
-function split(timeseries, indices, n_min; numstates = 2)
+function split(trajectory, indices, n_min; numstates = 2)
     if length(indices) > n_min
-        r0 = kmeans(view(timeseries, :, indices), numstates; max_iters=10^4)
+        r0 = kmeans(view(trajectory, :, indices), numstates; max_iters=10^4)
         inds = [[i for (j, i) in enumerate(indices) if r0.assignments[j] == k] for k in 1:numstates]
         centers = [r0.centers[:, k] for k in 1:numstates]
         return inds, centers
@@ -26,8 +26,8 @@ function split(timeseries, indices, n_min; numstates = 2)
 end
 
 # modification of code from Peter J. Schmid
-function unstructured_tree(timeseries, p_min; threshold = 2)
-    n = size(timeseries)[2]
+function unstructured_tree(trajectory, p_min; threshold = 2)
+    n = size(trajectory)[2]
     n_min = floor(Int, threshold * p_min * n)
     W, F, G, P1, P2 = [collect(1:n)], [], [], [1], []
     H = []
@@ -41,7 +41,7 @@ function unstructured_tree(timeseries, p_min; threshold = 2)
     while (length(W) > 0)
         w = popfirst!(W)
         p1 = popfirst!(P1)
-        inds, centers = split(timeseries, w, n_min)
+        inds, centers = split(trajectory, w, n_min)
         C[p1] =  centers
         if all([length(ind) > 0 for ind in inds])
             W = [inds..., W...]
@@ -67,7 +67,7 @@ function unstructured_tree(timeseries, p_min; threshold = 2)
     return F, G, H, P2, P3, P4, C, CC, P5
 end
 
-function determine_partition(timeseries, tree_type::Tree{Val{false}, S}; override = false) where S
+function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :minimum_probability)
             minimum_probability = tree_type.arguments.minimum_probability 
@@ -82,16 +82,16 @@ function determine_partition(timeseries, tree_type::Tree{Val{false}, S}; overrid
         minimum_probability = 0.01
     end
     Nmax = 100 * round(Int, 1/ minimum_probability)
-    if (size(timeseries)[2] > Nmax) & !(override)
-        @warn "timeseries too long, truncating to roughly $Nmax for determining embedding"
-        skip = round(Int, size(timeseries)[2] / Nmax)
-        timeseries = timeseries[:, 1:skip:end]
+    if (size(trajectory)[2] > Nmax) & !(override)
+        @warn "trajectory too long, truncating to roughly $Nmax for determining embedding"
+        skip = round(Int, size(trajectory)[2] / Nmax)
+        trajectory = trajectory[:, 1:skip:end]
     end
-    if (10/(size(timeseries)[2]) > minimum_probability) & !(override)
+    if (10/(size(trajectory)[2]) > minimum_probability) & !(override)
         @warn "minimum probabity too small, using 10x the reciprocal of the number of points"
-        minimum_probability = 10 / size(timeseries)[2]
+        minimum_probability = 10 / size(trajectory)[2]
     end
-    F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries, minimum_probability)
+    F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(trajectory, minimum_probability)
     embedding = UnstructuredTree(P4, C, P3)
     return embedding
 end
