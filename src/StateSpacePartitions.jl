@@ -7,11 +7,12 @@ include("Trees/Trees.jl")
 
 export StateSpacePartition
 
-import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
+# import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
 struct StateSpacePartition{E, P}
     embedding::E 
     partitions::P 
 end
+
 
 function StateSpacePartition(timeseries; method = Tree(), override = false)
     @info "determine partitioning function "
@@ -23,5 +24,8 @@ function StateSpacePartition(timeseries; method = Tree(), override = false)
     end
     return StateSpacePartition(embedding, partitions)
 end
+
+include("inverse_iteration.jl")
+include("coarsen.jl")
 
 end # module StateSpacePartitions

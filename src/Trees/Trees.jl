@@ -9,7 +9,7 @@ struct Tree{E, P}
     arguments::P 
 end
 
-Tree() = Tree(false, (; minimum_probability = 0.01))
+Tree(; structured = false, arguments = (; minimum_probability = 0.01)) = Tree(structured, arguments)
 Tree(bool::Bool, args::Any) = Tree(Val(bool), args)
 
 include("unstructured.jl")

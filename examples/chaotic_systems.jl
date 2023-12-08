@@ -21,3 +21,11 @@ function aizawa(s; a = 0.95, b = 0.7, c = 0.6, d = 3.5, e = 0.25, f = 0.25)
     ż = c + a * z - z^3/3 - (x^2 + y^2) * (1 + e * z) + f * z * x^3
     return [ẋ, ẏ, ż]
 end
+
+function newton_leipnick(s; a = 5, b = 0.5, c = 10.0, d = 0.175)
+    x, y, z = s
+    ẋ = -b * x + y + c * y * z
+    ẏ = -x - b * y + a * z * x
+    ż = d * z - a * x * y
+    return [ẋ, ẏ, ż]
+end

@@ -1,12 +1,11 @@
 
-
 holding_times(state_space_partitions::StateSpacePartition; dt =dt ) = holding_times(state_space_partitions.partitions, maximum(state_space_partitions.partitions), dt=dt)
-
-
+sparse_perron_frobenius(state_space_partitions::StateSpacePartition; step = 1) = sparse_perron_frobenius(state_space_partitions.partitions; step = step)
+sparse_generator(state_space_partitions::StateSpacePartition; dt = 1) = sparse_generator(state_space_partitions.partitions; dt=dt)
+#=
 function sparse_count_operator(markov_chain::Vector{S}, number_of_states::S, step::Int) where S
     count_matrix = spzeros(typeof(markov_chain[1]), number_of_states, number_of_states)
     for i in ProgressBar(0:step-1)
-        # count_matrix += sparse_count_operator(markov_chain[1+i:step:end], number_of_states)
         reduced_markov_chain = markov_chain[1+i:step:end]
         for j in 1:length(reduced_markov_chain)-1
             count_matrix[reduced_markov_chain[j+1], reduced_markov_chain[j]] += 1
@@ -24,7 +23,6 @@ function sparse_count_operator(markov_chain::Vector{S}, number_of_states::S) whe
     return count_matrix
 end
 
-sparse_perron_frobenius(state_space_partitions::StateSpacePartition; step = 1) = sparse_perron_frobenius(state_space_partitions.partitions; step = step)
 function sparse_perron_frobenius(partitions::Vector{S}; step = 1) where S
     number_of_states = maximum(partitions)
     count_matrix = sparse_count_operator(partitions, number_of_states, step)
@@ -38,8 +36,6 @@ function sparse_perron_frobenius(partitions::Vector{S}; step = 1) where S
     end
     return perron_frobenius_matrix
 end
-
-sparse_generator(state_space_partitions::StateSpacePartition; dt = 1) = sparse_generator(state_space_partitions.partitions; dt=dt)
 
 function sparse_generator(partitions::Vector{S}; dt = 1) where S
     number_of_states = maximum(partitions)
@@ -67,3 +63,4 @@ function sparse_generator(partitions::Vector{S}; dt = 1) where S
     end
     return generator_matrix
 end
+=#

@@ -1,3 +1,4 @@
+export extract_coarse_guess
 struct BinaryTree{S, T}
     markov_states::S
     levels::T
@@ -12,15 +13,9 @@ function (embedding::BinaryTree)(current_state)
     return local_index(global_index, embedding.levels)
 end
 
-# assumes binary tree
+# binary tree index juggling
 local_index(global_index, levels) = global_index - 2^levels + 1 # markov index from [1, 2^levels]
-# parent local index is markov_index(global_index, levels-1)
-# child local index is 2*markov_index(global_index, levels-1) + new_index - 1
-# global index is 2^levels + 1 + child local index
-# child_global_index(new_index, global_parent_index, level) = (2 * (local_index(global_parent_index, level - 1)-1) + new_index - 1) + 2^(level) 
-# simplified:
 child_global_index(new_index, global_parent_index) = 2 * global_parent_index + new_index - 1 
-# global_indices per level
 level_global_indices(level) = 2^(level-1):2^level-1
 parent_global_index(child_index) = div(child_index, 2) # both global
 
@@ -36,7 +31,6 @@ function get_markov_states(centers_list::Vector{Vector{Vector{Float64}}}, level)
 end
 get_markov_states(embedding::BinaryTree, level) = get_markov_states(embedding.markov_states, level)
 
-# markov_indices = div.(markov_chain[inds] .+ 2^levels .- 1, 2^(levels - i))
 function binary_split(timeseries)
     numstates = 2
     r0 = kmeans(timeseries, numstates; max_iters=10000)
@@ -65,6 +59,15 @@ function binary_tree(timeseries, levels)
         end
     end
     return centers_list, levels
+end
+
+function extract_coarse_guess(coarse_pfo, levels, index)
+    ll, vv = eigen(coarse_pfo)
+    guess = zeros(ComplexF64 ,size(coarse_pfo)[1] * 2^levels)
+    for i in eachindex(guess)
+        guess[i] = vv[(i-1)÷(2^levels) + 1, index]
+    end
+    return ll[index], guess / norm(guess)
 end
 
 function determine_partition(timeseries, tree_type::Tree{Val{true}, S}; override = false) where S
