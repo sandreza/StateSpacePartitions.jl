@@ -62,3 +62,12 @@ function halvorsen(s; a = 1.4)
     ż = halvorsen_base(z, x, y; a)
     return [ẋ, ẏ, ż]
 end
+
+piecewise_base(x, y, z) = 1 - x - y - 4 * abs(y)
+function piecewise(s)
+    x, y, z = s
+    ẋ = piecewise_base(x, y, z)
+    ẏ = piecewise_base(y, z, x)
+    ż = piecewise_base(z, x, y)
+    return [ẋ, ẏ, ż]
+end
