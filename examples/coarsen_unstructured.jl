@@ -14,7 +14,7 @@ Tfinal = 10^3
 iterations = round(Int, Tfinal/dt)
 
 timeseries = zeros(3, iterations)
-timeseries[:, 1] .= [14.0, 20.0, 27.0]
+timeseries[:, 1] .= [ -13.235228023643627, -13.659593873029198, 32.81481308244521]
 step = RungeKutta4(3)
 for i in ProgressBar(2:iterations)
     step(lorenz, timeseries[:, i-1], dt)
@@ -150,7 +150,7 @@ end
 ##
 Q = generator(coarsened_partitions[1]; dt = dt)
 Λ, W = eigen(Q')
-coarse_koopman = real.(W[:,end-3])#  real.(W[:, end-3])
+coarse_koopman = real.(W[:,end-3]) #  real.(W[:, end-3])
 coarse_λ = real.(Λ[end-3]) # real(Λ[end-3])
 
 λs = typeof(coarse_λ)[]
