@@ -18,5 +18,4 @@ end
 minimum_probability = 0.03
 state_space_partitions = StateSpacePartition(timeseries; method = Tree(false, minimum_probability))
 
-length(union(state_space_partitions.partitions)) == maximum(union(state_space_partitions.partitions))
 visualize(timeseries, state_space_partitions)

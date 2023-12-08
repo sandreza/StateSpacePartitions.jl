@@ -1,16 +1,15 @@
-using StateSpacePartitions, ProgressBars, Random, GLMakie 
+using StateSpacePartitions
+using ProgressBars, Random, GLMakie 
 using GraphMakie, NetworkLayout, Graphs, Printf, SparseArrays
 using MarkovChainHammer, LinearAlgebra, LinearSolve, Statistics
 using IncompleteLU
 include("chaotic_systems.jl")
-include("sparse_ops.jl")
 include("timestepping_utils.jl")
 include("visualization_utils.jl")
-include("coarsening_utils.jl")
-include("sparse_chain_hammer.jl")
 Random.seed!(1234)
 
-dt = 0.001 
+dt = 0.001
+ϵ = 0.3
 Tfinal = 10^3
 iterations = round(Int, Tfinal/dt)
 
@@ -19,15 +18,15 @@ timeseries[:, 1] .= [14.0, 20.0, 27.0]
 step = RungeKutta4(3)
 for i in ProgressBar(2:iterations)
     step(lorenz, timeseries[:, i-1], dt)
-    timeseries[:, i] .= step.xⁿ⁺¹
+    timeseries[:, i] .= step.xⁿ⁺¹ # .+ ϵ * randn(3) * sqrt(dt) .* timeseries[:, i-1]
 end
 ##
-# dt/10 is roughly p_min
+Random.seed!(1234)
 p_min = dt/10
 @info "computing embedding"
 Nmax = 100 * round(Int, 1/ p_min)
 skip = maximum([round(Int, size(timeseries)[2] / Nmax), 1])
-F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries[:, 1:skip:end], p_min; threshold = 2)
+F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(timeseries[:, 1:skip:end], p_min; threshold = 1.5)
 node_labels, adj, adj_mod, edge_numbers = graph_from_PI(PI);
 G = SimpleDiGraph(adj)
 embedding = UnstructuredTree(P4, C, P3)
@@ -71,15 +70,12 @@ end
 ##
 sQ = sparse_generator(partitions; dt = dt)
 avg_diag = tr(sQ) / size(sQ)[1]
-1/(avg_diag * dt)
+-1/(avg_diag * dt)
 
 sQᵀ = sQ'
-μ0 = coarse_λ / 2
+μ0 = coarse_λ/2
 b = copy(refine_koopman)
 A = copy(sQᵀ)
-for i in ProgressBar(eachindex(b))
-    A[i, i] = A[i, i] - μ0 
-end
 koopman, λ = inverse_iteration(A, b, μ0; tol = 1e-10, maxiter_eig = 100, maxiter_solve = 5)
 λ
 ##
@@ -92,15 +88,18 @@ koopman_colors = [real(koopman[reduced_partitions[i]]) for i in eachindex(reduce
 ##
 #=
 fig = Figure()
-inds = 1:100:3*100000
+Tf = 30
+last_ind = round(Int, Tf/dt)
+inds = 1:skip_data:last_ind 
+ts = collect(0:dt:Tf)[inds]
 koopman_timeseries = [-real(koopman[partitions[i]]) for i in inds]
 a = quantile(koopman_timeseries, 0.9)
 for i in 1:3
     ax = Axis(fig[i, 1])
-    scatter!(ax, timeseries[i, inds], color=koopman_timeseries, colormap=:balance, colorrange = (-a, a))
+    scatter!(ax, ts, timeseries[i, inds], color=koopman_timeseries, colormap=:balance, colorrange = (-a, a))
 end
 ax = Axis(fig[4, 1])
-scatter!(ax, koopman_timeseries)
+scatter!(ax, ts, koopman_timeseries)
 =#
 ##
 fig = Figure(size = (927, 554))
@@ -166,9 +165,6 @@ for i in ProgressBar(2:length(coarsened_partitions))
     local_to_local_fine = local_to_locals[i]
     b = refine_koopman_mode(local_to_local_coarse, local_to_local_fine, coarse_koopman)
     A = copy(typeof(coarse_λ).(sQᵀ))
-    for i in ProgressBar(eachindex(b))
-        A[i, i] = A[i, i] - μ0 
-    end
     koopman, λ = inverse_iteration(A, b, μ0; tol = 1e-10, maxiter_eig = 10, maxiter_solve = 2)
     push!(λs, λ)
     push!(koopmans, koopman)
