@@ -1,3 +1,5 @@
+using MarkovChainHammer, LinearAlgebra
+
 function visualize(trajectory, partition)
     if size(trajectory)[1] < 4
         fig = Figure()
