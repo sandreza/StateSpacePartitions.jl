@@ -15,7 +15,7 @@ for i in ProgressBar(2:iterations)
     trajectory[:, i] .= step.xⁿ⁺¹
 end
 
-minimum_probability = 0.03
+minimum_probability = 0.001/4
 state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, minimum_probability))
 
-visualize(trajectory, state_space_partitions)
+visualize_koopman_mode(trajectory, state_space_partitions.partitions, colormap1 = :thermal, mode = 2)
