@@ -13,7 +13,7 @@ Computes the eigenpair (λ, x) of the matrix A closest to μ₀ using inverse it
 * `μ₀::Real` - The initial guess for the eigenvalue.
 
 # Keyword Arguments
-* `tol::Real` - The tolerance for the iterative eigensolver.
+* `tol::Real` - The Cauchy-criteria tolerance for the iterative eigensolver.
 * `maxiter_eig::Int` - The maximum number of iterations for the iterative eigensolver.
 * `maxiter_solve::Int` - The maximum number of iterations for the iterative linear solver.
 * `τ::Real` - The drop tolerance for the incomplete LU factorization.

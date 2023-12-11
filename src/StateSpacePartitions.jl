@@ -27,5 +27,6 @@ end
 
 include("inverse_iteration.jl")
 include("coarsen.jl")
+include("markov_chain_hammer_extensions.jl")
 
 end # module StateSpacePartitions

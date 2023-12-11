@@ -29,12 +29,12 @@ end
 function unstructured_tree(trajectory, p_min; threshold = 2)
     n = size(trajectory)[2]
     n_min = floor(Int, threshold * p_min * n)
-    W, F, G, P1, P2 = [collect(1:n)], [], [], [1], []
+    W, F, P1, edge_information = [collect(1:n)], [], [1], []
     H = []
-    C = Dict()
-    P3 = Dict()
-    P4 = Dict()
-    P5 = Dict()
+    centers_list = Dict()
+    parent_to_children = Dict()
+    global_to_local = Dict()
+    local_to_global = Dict()
     CC = Dict()
     leaf_index = 1
     global_index = 1
@@ -42,29 +42,29 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
         w = popfirst!(W)
         p1 = popfirst!(P1)
         inds, centers = split(trajectory, w, n_min)
-        C[p1] =  centers
+        centers_list[p1] =  centers
         if all([length(ind) > 0 for ind in inds])
             W = [inds..., W...]
             Ptmp = []
             [push!(Ptmp, global_index + i) for i in eachindex(inds)]
             P1 = [Ptmp..., P1...]
-            [push!(P2, (p1, global_index + i, length(ind) / n)) for (i, ind) in enumerate(inds)]
+            [push!(edge_information, (p1, global_index + i, length(ind) / n)) for (i, ind) in enumerate(inds)]
             Ptmp2 = Int64[]
             [push!(Ptmp2, global_index + i) for (i, ind) in enumerate(inds)]
             [CC[global_index + i] = centers[i] for i in eachindex(inds)]
-            P3[p1] = Ptmp2
+            parent_to_children[p1] = Ptmp2
             global_index += length(inds)
             push!(H, [inds...])
         else
             push!(F, w)
             push!(H, [[]])
-            P3[p1] = NaN
-            P4[p1] = leaf_index
-            P5[leaf_index] = p1
+            parent_to_children[p1] = NaN
+            global_to_local[p1] = leaf_index
+            local_to_global[leaf_index] = p1
             leaf_index += 1
         end
     end
-    return F, G, H, P2, P3, P4, C, CC, P5
+    return F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global
 end
 
 function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
@@ -91,7 +91,7 @@ function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; overrid
         @warn "minimum probabity too small, using 10x the reciprocal of the number of points"
         minimum_probability = 10 / size(trajectory)[2]
     end
-    F, G, H, PI, P3, P4, C, CC, P5 = unstructured_tree(trajectory, minimum_probability)
-    embedding = UnstructuredTree(P4, C, P3)
+    F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global = unstructured_tree(trajectory, minimum_probability)
+    embedding = UnstructuredTree(global_to_local, centers_list, parent_to_children)
     return embedding
 end
