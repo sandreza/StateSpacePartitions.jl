@@ -15,7 +15,8 @@ for i in ProgressBar(2:iterations)
     trajectory[:, i] .= step.xⁿ⁺¹
 end
 
-state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, 0.001))
+method = Tree(false, 0.001)
+state_space_partitions = StateSpacePartition(trajectory; method = method)
 
 Random.seed!(1234)
 @info "determine partitioning function "
@@ -32,21 +33,27 @@ all(state_space_partitions.partitions .== partitions)
 visualize(trajectory, state_space_partitions)
 
 ##
-using MarkovChainHammer, Graphs, NetworkLayout, GraphMakie, LinearAlgebra
-P = perron_frobenius(state_space_partitions.partitions)
-P2 = perron_frobenius(reverse(state_space_partitions.partitions))
-P = (P2 + P)/2
-P = P - Diagonal(P)
-P = P ./ sum(P, dims = 1)
-g = DiGraph(P)
-P2 = P2 - Diagonal(P2)
-P2 = P2 ./ sum(P2, dims = 1)
-g2 = DiGraph(P2)
+using MarkovChainHammer, Graphs, NetworkLayout, GraphMakie, LinearAlgebra, SimpleWeightedGraphs
+Qᶠ = generator(state_space_partitions.partitions)
+Qᵇ = generator(reverse(state_space_partitions.partitions))
+[Qᶠ[i, i] = 0 for i in 1:size(Qᶠ)[1]]
+[Qᵇ[i, i] = 0 for i in 1:size(Qᵇ)[1]]
+Qʳ = (Qᶠ + Qᵇ)/2
+Qⁱ = (Qᶠ - Qᵇ)/2
+gᶠ = SimpleWeightedDiGraph(Qᶠ)
+gᵇ = SimpleWeightedDiGraph(Qᵇ)
+gʳ = SimpleWeightedDiGraph(Qʳ)
+gⁱ = SimpleWeightedDiGraph(Qⁱ)
 ##
+set_theme!(backgroundcolor = :white)
 fig = Figure() 
-layout = Spectral()
-ax = LScene(fig[1, 1])
-graphplot!(ax, g, layout=layout, node_size=0.0, edge_width=1.0)
-ax = LScene(fig[1, 2])
-graphplot!(ax, g2, layout=layout, node_size=0.0, edge_width=1.0)
+layout = Spectral(dim = 3)
+ax = LScene(fig[1, 1]; show_axis = false)
+graphplot!(ax, gᶠ, layout=layout, node_size=0.0, edge_width=1.0)
+ax = LScene(fig[1, 2]; show_axis = false)
+graphplot!(ax, gᵇ, layout=layout, node_size=0.0, edge_width=1.0)
+ax = LScene(fig[2, 1]; show_axis = false)
+graphplot!(ax, gʳ, layout=layout, node_size=0.0, edge_width=1.0)
+ax = LScene(fig[2, 2]; show_axis = false)
+graphplot!(ax, gⁱ, layout=layout, node_size=0.0, edge_width=1.0)
 display(fig)
