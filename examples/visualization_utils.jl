@@ -36,7 +36,7 @@ function graph_from_PI(PI)
 end
 
 function visualize_koopman_mode(trajectory, partition; mode = 2, colormap1 = :balance, colormap2 = :cyclic_mrybm_35_75_c68_n256, markersize = 10)
-    if (size(trajectory)[1] < 4) & (maximum(partition) < 3000)
+    if (size(trajectory)[1] < 4) & (maximum(partition) < 4000)
         generator_matrix = generator(state_space_partitions.partitions)
         eigenvalues, eigenvectors = eigen(generator_matrix')
         λ = reverse(eigenvalues)[mode]
