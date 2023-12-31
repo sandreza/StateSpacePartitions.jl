@@ -2,9 +2,11 @@ using LinearAlgebra, LinearSolve, IncompleteLU
 export inverse_iteration
 
 """
-inverse_iteration(A, x₀, μ₀; tol = 1e-4, maxiter_eig = 10, maxiter_solve = 2, τ = 0.1)
+    inverse_iteration(A, x₀, μ₀; tol = 1e-4, maxiter_eig = 10, maxiter_solve = 2, τ = 0.1)
 
-Computes the eigenpair (λ, x) of the matrix A closest to μ₀ using inverse iteration.
+# Description 
+
+Computes the eigenpair (λ, x) of the matrix A corresponding to initial eigenguess (μ₀, x₀) using inverse iteration.
 
 # Arguments
 
