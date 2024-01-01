@@ -67,6 +67,26 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
     return F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global
 end
 
+"""
+    determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
+
+# Decription
+
+This function determines the partition of a trajectory into an unstructured tree. The tree structure is specified by the `tree_type` argument. The `trajectory` argument is a trajectory of states. The `override` keyword argument is a boolean indicating whether to override the truncation of the trajectory.
+
+# Arguments
+
+* `trajectory`: a trajectory of states
+* `tree_type`: a `Tree` type
+
+# Keyword Arguments
+
+* `override`: a boolean indicating whether to override the truncation of the trajectory
+
+# Returns
+
+* `embedding`: a `Tree` object
+"""
 function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :minimum_probability)
