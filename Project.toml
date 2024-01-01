@@ -35,7 +35,7 @@ ParallelKMeans = "1.1"
 PrecompileTools = "1.2"
 ProgressBars = "1.5"
 Reexport = "1.2"
-SparseArrays = "1.10"
+SparseArrays = "1.9"
 julia = "1.8, 1.9, 1.10"
 
 [extras]
