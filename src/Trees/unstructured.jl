@@ -64,7 +64,21 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
             leaf_index += 1
         end
     end
-    return F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global
+
+    centers_list_vector       = Vector{Vector{Vector{Float64}}}(undef, length(centers_list))
+    parent_to_children_vector = Vector{Vector{Int64}}(undef, length(centers_list))
+    global_to_local_vector    = Vector{Int64}(undef, length(global_to_local))
+
+    for n in eachindex(centers_list_vector)
+        centers_list_vector[n] = centers_list[n]
+        parent_to_children_vector[n] = parent_to_children[n]
+    end
+
+    for n in keys(global_to_local)
+        global_to_local_vector[n] = global_to_local[n]
+    end
+
+    return F, H, edge_information, parent_to_children_vector, global_to_local_vector, centers_list_vector, CC, local_to_global
 end
 
 """

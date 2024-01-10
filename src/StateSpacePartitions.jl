@@ -1,18 +1,21 @@
 module StateSpacePartitions
 
+export StateSpacePartition
+
 using ProgressBars
 using Reexport, PrecompileTools
 
+include("Architectures.jl")
 include("Trees/Trees.jl")
 
-export StateSpacePartition
+using .Architectures
+using .Trees
 
 # import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
 struct StateSpacePartition{E, P}
     embedding::E 
     partitions::P 
 end
-
 
 function StateSpacePartition(trajectory; method = Tree(), override = false)
     @info "determine partitioning function "
