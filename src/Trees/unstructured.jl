@@ -31,10 +31,10 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
     n_min = floor(Int, threshold * p_min * n)
     W, F, P1, edge_information = [collect(1:n)], [], [1], []
     H = []
-    centers_list = Dict()
-    parent_to_children = Dict()
-    global_to_local = Dict()
-    local_to_global = Dict()
+    centers_list = Dict{Int64, Vector{Vector{Float64}}}()
+    parent_to_children = Dict{Int64, Vector{Int64}}()
+    global_to_local = Dict{Int64, Int64}()
+    local_to_global = Dict{Int64, Int64}()
     CC = Dict()
     leaf_index = 1
     global_index = 1
@@ -58,7 +58,7 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
         else
             push!(F, w)
             push!(H, [[]])
-            parent_to_children[p1] = NaN
+            parent_to_children[p1] = Int64[]
             global_to_local[p1] = leaf_index
             local_to_global[leaf_index] = p1
             leaf_index += 1
