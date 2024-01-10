@@ -28,6 +28,7 @@ end
 
     Random.seed!(12345)
 
+    # Binary tree test
     state_space_partitions = StateSpacePartition(trajectory)
     full_partitions = state_space_partitions.partitions
 
@@ -40,6 +41,7 @@ end
 
     @test partitions == full_partitions
 
+    # Unstructured tree test
     state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, 0.001))
     full_partitions = state_space_partitions.partitions
 
