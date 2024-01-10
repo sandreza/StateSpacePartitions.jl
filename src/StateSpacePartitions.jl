@@ -24,7 +24,7 @@ function StateSpacePartition(trajectory;
                              override = false)
 
     @info "determine partitioning function "
-    embedding = determine_partition(trajectory, method; override = override)
+    embedding = determine_partition(trajectory, method; override = override, architecture)
     partitions = zeros(Int64, size(trajectory)[2])
     partitions = ChunkedArray(partitions, architecture; chunk_size)
     chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)

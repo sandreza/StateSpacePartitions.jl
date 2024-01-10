@@ -12,11 +12,16 @@ using CUDA: CUDABackend
 import Base
 
 const GPU = CUDABackend
+const AA = AbstractArray
+const CA = CuArray
 
-convert(::CPU, array::CuArray) = Array(array)
-convert(::GPU, array::AbstractArray) = CuArray(array)
-convert(::CPU, array::AbstractArray) = array
-convert(::GPU, array::CuArray) = array
+convert(::CPU, array::CA) = Array(array)
+convert(::GPU, array::AA) = CuArray(array)
+convert(::CPU, array::AA) = array
+convert(::GPU, array::CA) = array
+
+convert(arch, array::AA{<:AA})       = convert(arch, convert.(arch, array))
+convert(arch, array::AA{<:AA{<:AA}}) = convert(arch, convert.(arch, convert.(arch, array)))
 
 """
     ChunkedArray{A, B, C, I}(architecture, array, chunked_array, current_range)

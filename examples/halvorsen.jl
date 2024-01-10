@@ -1,4 +1,5 @@
 using StateSpacePartitions, ProgressBars, Random, GLMakie, SparseArrays
+
 include("chaotic_systems.jl")
 include("timestepping_utils.jl")
 include("visualization_utils.jl")
@@ -16,7 +17,7 @@ for i in ProgressBar(2:iterations)
 end
 
 minimum_probability = 0.001
-@time state_space_partitions = StateSpacePartition(trajectory; chunk_size = size(trajectory, 2) ÷ 500, method = Tree(false, minimum_probability))
+@time state_space_partitions = StateSpacePartition(trajectory; chunk_size = size(trajectory, 2) ÷ 1, method = Tree(false, minimum_probability))
 partitions = state_space_partitions.partitions.array
 
 visualize_koopman_mode(trajectory, partitions, colormap1 = :thermal, mode = 2)
