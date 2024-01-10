@@ -39,4 +39,16 @@ end
     end
 
     @test partitions == full_partitions
+
+    state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, 0.001))
+    full_partitions = state_space_partitions.partitions
+
+    embedding  = state_space_partitions.embedding
+    partitions = zeros(Int64, size(trajectory, 2))
+    
+    for i in 1:size(trajectory, 2)
+        partitions[i] = embedding(trajectory[:, i])
+    end
+
+    @test partitions == full_partitions
 end
