@@ -20,8 +20,8 @@ convert(::GPU, array::AA) = CuArray(array)
 convert(::CPU, array::AA) = array
 convert(::GPU, array::CA) = array
 
-convert(arch, array::AA{<:AA})       = convert(arch, convert.(arch, array))
-convert(arch, array::AA{<:AA{<:AA}}) = convert(arch, convert.(arch, convert.(arch, array)))
+convert(::GPU, array::AA{<:AA})       = convert(arch, convert.(arch, array))
+convert(::GPU, array::AA{<:AA{<:AA}}) = convert(arch, convert.(arch, convert.(arch, array)))
 
 """
     ChunkedArray{A, B, C, I}(architecture, array, chunked_array, current_range)

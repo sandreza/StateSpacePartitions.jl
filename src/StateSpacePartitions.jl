@@ -32,7 +32,7 @@ function StateSpacePartition(trajectory;
     @info "computing partition trajectory"
     embedding(partitions, chunked_trajectory)
 
-    return StateSpacePartition(embedding, partitions)
+    return StateSpacePartition(embedding, partitions.array)
 end
 
 include("inverse_iteration.jl")
