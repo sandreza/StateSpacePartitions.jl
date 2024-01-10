@@ -17,14 +17,21 @@ struct StateSpacePartition{E, P}
     partitions::P 
 end
 
-function StateSpacePartition(trajectory; method = Tree(), override = false)
+function StateSpacePartition(trajectory; 
+                             architecture = CPU(),
+                             method = Tree(), 
+                             chunk_size = size(trajectory)[2],
+                             override = false)
+
     @info "determine partitioning function "
     embedding = determine_partition(trajectory, method; override = override)
     partitions = zeros(Int64, size(trajectory)[2])
+    partitions = ChunkedArray(partitions, architecture; chunk_size)
+    chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
+
     @info "computing partition trajectory"
-    for i in ProgressBar(eachindex(partitions))
-        @inbounds partitions[i] = embedding(trajectory[:, i])
-    end
+    embedding(partitions, chunked_trajectory)
+
     return StateSpacePartition(embedding, partitions)
 end
 

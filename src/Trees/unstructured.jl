@@ -1,3 +1,6 @@
+using KernelAbstractions: @index, @kernel
+using StateSpacePartitions.Architectures: launch_chunked_kernel!, architecture, total_length
+
 struct UnstructuredTree{L, C, CH}
     leafmap::L 
     centers::C 
@@ -13,6 +16,34 @@ function (embedding::UnstructuredTree)(state)
         current_index = embedding.children[current_index][local_child]
     end
     return embedding.leafmap[current_index]
+end
+
+function (embedding::UnstructuredTree)(partitions, states)
+    worksize  = total_length(states)
+    workgroup = min(length(partitions), 256)
+
+    arch = architecture(partitions)
+    args = (partitions, states, embedding.centers, embedding.children, embedding.leafmap)
+
+    launch_chunked_kernel!(arch, workgroup, worksize, _compute_embedding!, args)
+
+    return nothing
+end
+
+@kernel function _compute_embedding!(partitions, states, centers, children, leafmap)
+    p = @index(Global, Linear)
+    
+    @inbounds begin
+        state = states[:, p]
+
+        current_index = 1
+        while length(centers[current_index]) > 1
+            local_child = argmin([norm(state - center) for center in centers[current_index]])
+            current_index = children[current_index][local_child]
+        end
+
+        partitions[p] = leafmap[current_index]
+    end
 end
 
 function split(trajectory, indices, n_min; numstates = 2)
@@ -67,7 +98,7 @@ function unstructured_tree(trajectory, p_min; threshold = 2)
 
     centers_list_vector       = Vector{Vector{Vector{Float64}}}(undef, length(centers_list))
     parent_to_children_vector = Vector{Vector{Int64}}(undef, length(centers_list))
-    global_to_local_vector    = Vector{Int64}(undef, length(global_to_local))
+    global_to_local_vector    = Vector{Int64}(undef, maximum(keys(global_to_local)))
 
     for n in eachindex(centers_list_vector)
         centers_list_vector[n] = centers_list[n]

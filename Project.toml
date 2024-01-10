@@ -42,5 +42,5 @@ GraphMakie = "1ecd5474-83a3-4783-bb4f-06765db800d2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-examples = ["GLMakie", "GraphMakie"]
+examples = ["GLMakie", "GraphMakie", "FFMPEG"]
 test = ["Test"]
