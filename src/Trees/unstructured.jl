@@ -36,7 +36,7 @@ end
     p = @index(Global, Linear)
     
     @inbounds begin
-        state = states[:, p]
+        # state = states[:, p]
 
         current_index = 1
         while length(centers[current_index]) > 1
