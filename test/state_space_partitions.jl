@@ -20,3 +20,37 @@ Random.seed!(12345)
     state_space_partitions = StateSpacePartition(trajectory; method)
     @test maximum(state_space_partitions.partitions) == 16
 end
+
+@testset "Full trajectory embedding" begin
+    states = 3
+    trajectory = 10^2
+    trajectory = randn(states, trajectory)
+
+    Random.seed!(12345)
+
+    # Binary tree test
+    state_space_partitions = StateSpacePartition(trajectory)
+    full_partitions = state_space_partitions.partitions
+
+    embedding  = state_space_partitions.embedding
+    partitions = zeros(Int64, size(trajectory, 2))
+    
+    for i in 1:size(trajectory, 2)
+        partitions[i] = embedding(trajectory[:, i])
+    end
+
+    @test partitions == full_partitions
+
+    # Unstructured tree test
+    state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, 0.001))
+    full_partitions = state_space_partitions.partitions
+
+    embedding  = state_space_partitions.embedding
+    partitions = zeros(Int64, size(trajectory, 2))
+    
+    for i in 1:size(trajectory, 2)
+        partitions[i] = embedding(trajectory[:, i])
+    end
+
+    @test partitions == full_partitions
+end

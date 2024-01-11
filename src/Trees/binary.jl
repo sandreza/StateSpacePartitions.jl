@@ -1,16 +1,49 @@
+using KernelAbstractions: @kernel, @index
+using KernelAbstractions.Extras.LoopInfo: @unroll
+
 export extract_coarse_guess
+
 struct BinaryTree{S, T}
-    markov_states::S
+    centers::S
     levels::T
 end
 
 function (embedding::BinaryTree)(current_state)
     global_index = 1 
     for level in 1:embedding.levels
-        new_index = argmin([norm(current_state - markov_state) for markov_state in embedding.markov_states[global_index]])
+        new_index = argmin([norm(current_state - markov_state) for markov_state in embedding.centers[global_index]])
         global_index = child_global_index(new_index, global_index)
     end
     return local_index(global_index, embedding.levels)
+end
+
+function (embedding::BinaryTree)(partitions, states)
+    worksize  = total_length(states)
+    workgroup = min(length(partitions), 256)
+
+    arch = architecture(partitions)
+    args = (partitions, states, embedding.centers, Val(embedding.levels))
+
+    launch_chunked_kernel!(arch, workgroup, worksize, _compute_binary_embedding!, args)
+
+    return nothing
+end
+
+@kernel function _compute_binary_embedding!(partitions, states, centers, ::Val{levels}) where levels
+    p = @index(Global, Linear)
+    
+    @inbounds begin
+        state = states[:, p]
+
+        global_index = 1 
+
+        @unroll for _ in 1:levels
+            new_index = argmin([norm(state - center) for center in centers[global_index]])
+            global_index = child_global_index(new_index, global_index)
+        end
+    
+        partitions[p] = local_index(global_index, levels)
+    end
 end
 
 # binary tree index juggling
@@ -90,7 +123,7 @@ This function determines the partitioning of the state space into a binary tree.
 
 * `embedding`: a `Tree` object
 """
-function determine_partition(trajectory, tree_type::Tree{Val{true}, S}; override = false) where S
+function determine_partition(trajectory, tree_type::Tree{Val{true}, S}; override = false, kwargs...) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :levels)
             levels = tree_type.arguments.levels

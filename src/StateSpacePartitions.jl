@@ -1,11 +1,15 @@
 module StateSpacePartitions
 
+export StateSpacePartition
+
 using ProgressBars
 using Reexport, PrecompileTools
 
+include("Architectures.jl")
 include("Trees/Trees.jl")
 
-export StateSpacePartition
+using .Architectures
+using .Trees
 
 # import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
 struct StateSpacePartition{E, P}
@@ -13,16 +17,22 @@ struct StateSpacePartition{E, P}
     partitions::P 
 end
 
+function StateSpacePartition(trajectory; 
+                             architecture = CPU(),
+                             method = Tree(), 
+                             chunk_size = size(trajectory)[2],
+                             override = false)
 
-function StateSpacePartition(trajectory; method = Tree(), override = false)
     @info "determine partitioning function "
-    embedding = determine_partition(trajectory, method; override = override)
+    embedding = determine_partition(trajectory, method; override = override, architecture)
     partitions = zeros(Int64, size(trajectory)[2])
+    partitions = ChunkedArray(partitions, architecture; chunk_size)
+    chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
+
     @info "computing partition trajectory"
-    for i in ProgressBar(eachindex(partitions))
-        @inbounds partitions[i] = embedding(trajectory[:, i])
-    end
-    return StateSpacePartition(embedding, partitions)
+    embedding(partitions, chunked_trajectory)
+
+    return StateSpacePartition(embedding, partitions.array)
 end
 
 include("inverse_iteration.jl")
