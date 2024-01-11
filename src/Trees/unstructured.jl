@@ -40,8 +40,7 @@ end
 
         current_index = 1
         while length(centers[current_index]) > 1
-            distances = Tuple(norm(Tuple(state[i] - center[i] for i in eachindex(center))) for center in centers[current_index])
-            local_child = argmin(distances)
+            local_child = argmin([norm(state .- center) for center in centers[current_index]])
             current_index = children[current_index][local_child]
         end
 
