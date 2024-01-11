@@ -36,13 +36,13 @@ end
     p = @index(Global, Linear)
     
     @inbounds begin
-        # state = states[:, p]
+        state = states[:, p]
 
         current_index = 1
-        # while length(centers[current_index]) > 1
-            # local_child = 1 # argmin([norm(state .- center) for center in centers[current_index]])
-            # current_index = children[current_index][local_child]
-        # end
+        while length(centers[current_index]) > 1
+            local_child = 1 # argmin([norm(state .- center) for center in centers[current_index]])
+            current_index = children[current_index][local_child]
+        end
 
         partitions[p] = leafmap[current_index]
     end
