@@ -20,6 +20,9 @@ convert(::GPU, array::AA) = CuArray(array)
 convert(::CPU, array::AA) = array
 convert(::GPU, array::CA) = array
 
+vector_type(::CPU) = Vector
+vector_type(::GPU) = CuVector
+
 """
     ChunkedArray{A, B, C, I}(architecture, array, chunked_array, current_range)
 

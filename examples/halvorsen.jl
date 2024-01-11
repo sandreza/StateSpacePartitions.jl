@@ -1,4 +1,4 @@
-using StateSpacePartitions, ProgressBars, Random, GLMakie, SparseArrays
+using StateSpacePartitions, ProgressBars, Random, SparseArrays
 
 include("chaotic_systems.jl")
 include("timestepping_utils.jl")
@@ -19,4 +19,4 @@ end
 minimum_probability = 0.001
 @time state_space_partitions = StateSpacePartition(trajectory; chunk_size = size(trajectory, 2) ÷ 50, method = Tree(false, minimum_probability))
 
-visualize_koopman_mode(trajectory, partitions, colormap1 = :thermal, mode = 2)
+# visualize_koopman_mode(trajectory, state_space_partitions, colormap1 = :thermal, mode = 2)

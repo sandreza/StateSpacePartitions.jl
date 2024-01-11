@@ -123,7 +123,7 @@ This function determines the partitioning of the state space into a binary tree.
 
 * `embedding`: a `Tree` object
 """
-function determine_partition(trajectory, tree_type::Tree{Val{true}, S}; override = false, kwargs...) where S
+function determine_partition(trajectory, tree_type::Tree{Val{true}, S}; override = false, architecture = CPU()) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :levels)
             levels = tree_type.arguments.levels

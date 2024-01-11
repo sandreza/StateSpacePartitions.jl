@@ -1,6 +1,7 @@
 using KernelAbstractions: @index, @kernel
 using StateSpacePartitions.Architectures
-using StateSpacePartitions.Architectures: architecture, total_length, convert
+using StateSpacePartitions.Architectures: architecture, total_length, convert, vector_type
+using StaticArrays
 
 struct UnstructuredTree{L, C, CH}
     leafmap::L 
@@ -13,7 +14,7 @@ UnstructuredTree() = UnstructuredTree([], [], [])
 function (embedding::UnstructuredTree)(state)
     current_index = 1
     while length(embedding.centers[current_index]) > 1
-        local_child = argmin([norm(state - center) for center in embedding.centers[current_index]])
+        local_child = argmin([norm(state .- center) for center in embedding.centers[current_index]])
         current_index = embedding.children[current_index][local_child]
     end
     return embedding.leafmap[current_index]
@@ -39,7 +40,7 @@ end
 
         current_index = 1
         while length(centers[current_index]) > 1
-            local_child = argmin([norm(state - center) for center in centers[current_index]])
+            local_child = argmin([norm(state .- center) for center in centers[current_index]])
             current_index = children[current_index][local_child]
         end
 
@@ -97,21 +98,27 @@ function unstructured_tree(trajectory, p_min; threshold = 2, architecture = CPU(
         end
     end
 
-    centers_list_vector       = Vector{Vector{Vector{Float64}}}(undef, length(centers_list))
-    parent_to_children_vector = Vector{Vector{Int64}}(undef, length(centers_list))
+    VectorType = vector_type(architecture)
+
+    centers_list_vector       = Vector{VectorType}(undef, length(centers_list))
+    parent_to_children_vector = Vector{VectorType{Int64}}(undef, length(centers_list))
     global_to_local_vector    = Vector{Int64}(undef, maximum(keys(global_to_local)))
 
     for n in eachindex(centers_list_vector)
-        centers_list_vector[n] = centers_list[n]
-        parent_to_children_vector[n] = parent_to_children[n]
+        centers = centers_list[n]
+        centers = Tuple.(centers)
+        centers_list_vector[n] = VectorType(centers)
+        parent_to_children_vector[n] = VectorType(parent_to_children[n])
     end
+
+    # Creating the nested data structure
 
     for n in keys(global_to_local)
         global_to_local_vector[n] = global_to_local[n]
     end
 
-    centers_list_vectors = convert(architecture, centers_list_vector)
-    parent_to_children_vector = convert(architecture, parent_to_children_vector)
+    centers_list_vector = tuple(centers_list_vector...)
+    parent_to_children_vector = tuple(parent_to_children_vector...)
     global_to_local_vector = convert(architecture, global_to_local_vector)
 
     return F, H, edge_information, parent_to_children_vector, global_to_local_vector, centers_list_vector, CC, local_to_global
