@@ -6,7 +6,7 @@ include("visualization_utils.jl")
 Random.seed!(1234)
 
 dt = 0.1
-iterations = 10^8
+iterations = 10^5
 
 trajectory = zeros(3, iterations)
 trajectory[:, 1] .= [ -3.5626767040251024, -4.862155361130287, 4.104823253572631] # a point on the attractor
@@ -17,6 +17,6 @@ for i in ProgressBar(2:iterations)
 end
 
 minimum_probability = 0.001
-@time state_space_partitions = StateSpacePartition(trajectory; chunk_size = size(trajectory, 2) ÷ 50, method = Tree(false, minimum_probability))
+state_space_partitions = StateSpacePartition(trajectory; method = Tree(false, minimum_probability))
 
-visualize_koopman_mode(trajectory, partitions, colormap1 = :thermal, mode = 2)
+visualize_koopman_mode(trajectory, state_space_partitions.partitions, colormap1 = :thermal, mode = 2)
