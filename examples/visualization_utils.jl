@@ -68,3 +68,5 @@ function visualize_koopman_mode(trajectory, partitions; mode = 2, colormap1 = :b
         return false 
     end
 end
+
+visualize_koopman_mode(trajectory, ssp::StateSpacePartition; mode = 2, colormap1 = :balance, colormap2 = :cyclic_mrybm_35_75_c68_n256, markersize = 10) = visualize_koopman_mode(trajectory, ssp.partitions; mode, colormap1, colormap2, markersize)
