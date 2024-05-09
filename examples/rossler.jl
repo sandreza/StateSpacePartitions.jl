@@ -15,7 +15,7 @@ for i in ProgressBar(2:iterations)
     trajectory[:, i] .= step.xⁿ⁺¹
 end
 
-levels = 4
+levels = 8
 minimum_probability = 0.75/2^(levels)
 tree_type = Tree(false, minimum_probability)
 state_space_partitions = StateSpacePartition(trajectory; method = tree_type)

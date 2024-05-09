@@ -44,7 +44,7 @@ function visualize_koopman_mode(trajectory, partitions; mode = 2, colormap1 = :b
         if ((imag(λ) / abs(λ)) < eps(100.0)) | (abs(λ) < eps(100.0))
             set_theme!(backgroundcolor = :black)
             w = real.(v)
-            koopman = [w[partition[i]] for i in eachindex(partition)]
+            koopman = [w[partitions[i]] for i in eachindex(partitions)]
             fig = Figure()
             ax = LScene(fig[1,1]; show_axis=false)
             scatter!(ax, trajectory, color=koopman, colormap= colormap1, markersize=markersize)
