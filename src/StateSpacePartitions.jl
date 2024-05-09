@@ -35,7 +35,7 @@ function StateSpacePartition(trajectory;
         partitions[i] = embedding(state)
     end
 
-    return StateSpacePartition(embedding, partitions.array)
+    return StateSpacePartition(embedding, partitions)
 end
 
 include("inverse_iteration.jl")
