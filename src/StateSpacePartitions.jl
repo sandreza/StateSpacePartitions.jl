@@ -26,11 +26,14 @@ function StateSpacePartition(trajectory;
     @info "determine partitioning function "
     embedding = determine_partition(trajectory, method; override = override, architecture)
     partitions = zeros(Int64, size(trajectory)[2])
-    partitions = ChunkedArray(partitions, architecture; chunk_size)
-    chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
+    # partitions = ChunkedArray(partitions, architecture; chunk_size)
+    # chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
+    # embedding(partitions, chunked_trajectory)
 
     @info "computing partition trajectory"
-    embedding(partitions, chunked_trajectory)
+    for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
+        partitions[i] = embedding(state)
+    end
 
     return StateSpacePartition(embedding, partitions.array)
 end
