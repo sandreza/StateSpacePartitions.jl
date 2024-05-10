@@ -33,17 +33,17 @@ all(state_space_partitions.partitions .== partitions)
 visualize(trajectory, state_space_partitions)
 
 ##
-using MarkovChainHammer, Graphs, NetworkLayout, GraphMakie, LinearAlgebra, SimpleWeightedGraphs
+using MarkovChainHammer, Graphs, NetworkLayout, GraphMakie, LinearAlgebra
 Qᶠ = generator(state_space_partitions.partitions)
 Qᵇ = generator(reverse(state_space_partitions.partitions))
 [Qᶠ[i, i] = 0 for i in 1:size(Qᶠ)[1]]
 [Qᵇ[i, i] = 0 for i in 1:size(Qᵇ)[1]]
 Qʳ = (Qᶠ + Qᵇ)/2
 Qⁱ = (Qᶠ - Qᵇ)/2
-gᶠ = SimpleWeightedDiGraph(Qᶠ)
-gᵇ = SimpleWeightedDiGraph(Qᵇ)
-gʳ = SimpleWeightedDiGraph(Qʳ)
-gⁱ = SimpleWeightedDiGraph(Qⁱ)
+gᶠ = DiGraph(Qᶠ)
+gᵇ = DiGraph(Qᵇ)
+gʳ = DiGraph(Qʳ)
+gⁱ = DiGraph(Qⁱ)
 ##
 set_theme!(backgroundcolor = :white)
 fig = Figure() 
