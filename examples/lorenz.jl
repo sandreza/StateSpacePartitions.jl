@@ -34,6 +34,8 @@ visualize(trajectory, state_space_partitions)
 
 ##
 using MarkovChainHammer, Graphs, NetworkLayout, GraphMakie, LinearAlgebra
+# Qᶠ = perron_frobenius(state_space_partitions.partitions)
+# Qᵇ = perron_frobenius(reverse(state_space_partitions.partitions))
 Qᶠ = generator(state_space_partitions.partitions)
 Qᵇ = generator(reverse(state_space_partitions.partitions))
 [Qᶠ[i, i] = 0 for i in 1:size(Qᶠ)[1]]
