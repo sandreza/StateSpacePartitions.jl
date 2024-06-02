@@ -31,5 +31,6 @@ Tree(bool::Bool, args::Any) = Tree(Val(bool), args)
 
 include("unstructured.jl")
 include("binary.jl")
+include("coarsen.jl")
 
 end # module Tree

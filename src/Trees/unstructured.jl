@@ -1,7 +1,3 @@
-using KernelAbstractions: @index, @kernel
-using StateSpacePartitions.Architectures
-using StateSpacePartitions.Architectures: architecture, total_length, convert
-
 struct UnstructuredTree{L, C, CH}
     leafmap::L 
     centers::C 
@@ -19,34 +15,6 @@ function (embedding::UnstructuredTree)(state)
     return embedding.leafmap[current_index]
 end
 
-function (embedding::UnstructuredTree)(partitions, states)
-    worksize  = total_length(states)
-    workgroup = min(length(partitions), 256)
-
-    arch = architecture(partitions)
-    args = (partitions, states, embedding.centers, embedding.children, embedding.leafmap)
-
-    launch_chunked_kernel!(arch, workgroup, worksize, _compute_embedding!, args)
-
-    return nothing
-end
-
-@kernel function _compute_embedding!(partitions, states, centers, children, leafmap)
-    p = @index(Global, Linear)
-    
-    @inbounds begin
-        state = states[:, p]
-
-        current_index = 1
-        while length(centers[current_index]) > 1
-            local_child = argmin([norm(state - center) for center in centers[current_index]])
-            current_index = children[current_index][local_child]
-        end
-
-        partitions[p] = leafmap[current_index]
-    end
-end
-
 function split(trajectory, indices, n_min; numstates = 2)
     if length(indices) > n_min
         r0 = kmeans(view(trajectory, :, indices), numstates; max_iters=10^4)
@@ -58,7 +26,7 @@ function split(trajectory, indices, n_min; numstates = 2)
 end
 
 # modification of code from Peter J. Schmid
-function unstructured_tree(trajectory, p_min; threshold = 2, architecture = CPU())
+function unstructured_tree(trajectory, p_min; threshold = 2)
     n = size(trajectory)[2]
     n_min = floor(Int, threshold * p_min * n)
     W, F, P1, edge_information = [collect(1:n)], [], [1], []
@@ -110,10 +78,6 @@ function unstructured_tree(trajectory, p_min; threshold = 2, architecture = CPU(
         global_to_local_vector[n] = global_to_local[n]
     end
 
-    centers_list_vectors = convert(architecture, centers_list_vector)
-    parent_to_children_vector = convert(architecture, parent_to_children_vector)
-    global_to_local_vector = convert(architecture, global_to_local_vector)
-
     return F, H, edge_information, parent_to_children_vector, global_to_local_vector, centers_list_vector, CC, local_to_global
 end
 
@@ -137,7 +101,7 @@ This function determines the partition of a trajectory into an unstructured tree
 
 * `embedding`: a `Tree` object
 """
-function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false, architecture = CPU()) where S
+function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :minimum_probability)
             minimum_probability = tree_type.arguments.minimum_probability 
@@ -161,7 +125,7 @@ function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; overrid
         @warn "minimum probabity too small, using 10x the reciprocal of the number of points"
         minimum_probability = 10 / size(trajectory)[2]
     end
-    F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global = unstructured_tree(trajectory, minimum_probability; architecture)
+    F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global = unstructured_tree(trajectory, minimum_probability)
     embedding = UnstructuredTree(global_to_local, centers_list, parent_to_children)
     return embedding
 end

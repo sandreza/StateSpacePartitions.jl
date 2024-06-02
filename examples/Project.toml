@@ -1,0 +1,7 @@
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+GraphMakie = "1ecd5474-83a3-4783-bb4f-06765db800d2"
+MarkovChainHammer = "38c40fd0-bccb-4723-b30d-b2caea0ad8d9"
+NetworkLayout = "46757867-2c16-5918-afeb-47bfcb05e46a"
+ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+StateSpacePartitions = "5427e241-e665-444a-8288-8739a7fd2cc0"

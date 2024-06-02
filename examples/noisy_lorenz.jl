@@ -4,8 +4,8 @@ include("timestepping_utils.jl")
 include("visualization_utils.jl")
 Random.seed!(1234)
 
-dt = 0.001 
-iterations = 10^8
+dt = 0.01 
+iterations = 10^5
 
 trajectory = zeros(3, iterations)
 trajectory[:, 1] .= [14.0, 20.0, 27.0]
@@ -19,4 +19,4 @@ method = Tree(false, 0.001)
 state_space_partitions = StateSpacePartition(trajectory; method = method)
 
 length(union(state_space_partitions.partitions))
-# visualize_koopman_mode(trajectory, state_space_partitions.partitions, colormap1 = :balance, mode = 4)
+visualize_koopman_mode(trajectory, state_space_partitions.partitions, colormap1 = :balance, mode = 4)
