@@ -9,7 +9,6 @@ include("Trees/Trees.jl")
 
 using .Trees
 
-# import StateSpacePartitions.Trees: unstructured_tree, UnstructuredTree, determine_partition, Tree
 struct StateSpacePartition{E, P}
     embedding::E 
     partitions::P 
@@ -40,10 +39,19 @@ function StateSpacePartition(trajectory;
     return StateSpacePartition(embedding, partitions)
 end
 
-# Utility Functions
+# Extensions
+include("Extensions/markov_chain_hammer_extensions.jl")
+include("Extensions/tree_extensions.jl")
 
-include("inverse_iteration.jl")
-include("markov_chain_hammer_extensions.jl")
-include("tree_extensions.jl")
+@setup_workload begin
+    using Random
+    Random.seed!(1234)
+    # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
+    # precompile file and potentially make loading faster.
+    @compile_workload begin
+        trajectory = randn(3, 1000)
+        ssp = StateSpacePartition(trajectory)
+    end
+end
 
 end # module StateSpacePartitions
