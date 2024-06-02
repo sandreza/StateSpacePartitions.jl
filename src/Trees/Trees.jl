@@ -1,7 +1,6 @@
 @reexport module Trees 
 
 using ParallelKMeans, LinearAlgebra
-# using StateSpacePartitions.Architectures
 
 export Tree, determine_partition, unstructured_tree, UnstructuredTree, BinaryTree
 

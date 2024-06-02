@@ -21,21 +21,36 @@ function StateSpacePartition(trajectory;
                              architecture = CPU(),
                              method = Tree(), 
                              chunk_size = size(trajectory)[2],
+                             cells = nothing,
+                             chunked = false,
                              override = false)
 
     @info "determine partitioning function "
-    embedding = determine_partition(trajectory, method; override = override, architecture)
-    partitions = zeros(Int64, size(trajectory)[2])
-    # partitions = ChunkedArray(partitions, architecture; chunk_size)
-    # chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
-    # embedding(partitions, chunked_trajectory)
-
-    @info "computing partition trajectory"
-    for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
-        partitions[i] = embedding(state)
+    if  isnothing(cells)
+    elseif typeof(cells) == Int
+        @assert cells > 0
+        method = Tree(; structured = false, arguments = (; minimum_probability = 1/cells))
+    else
+        @error "cells must be an integer"
     end
 
-    return StateSpacePartition(embedding, partitions)
+    embedding = determine_partition(trajectory, method; override = override, architecture)
+    partitions = zeros(Int64, size(trajectory)[2])
+
+    if chunked
+        @info "computing (chunked) partition trajectory"
+        chunked_partitions = ChunkedArray(partitions, architecture; chunk_size)
+        chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
+        embedding(chunked_partitions, chunked_trajectory)
+        return StateSpacePartition(embedding, chunked_partitions)
+    else
+        @info "computing partition trajectory"
+        for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
+            partitions[i] = embedding(state)
+        end
+        return StateSpacePartition(embedding, partitions)
+    end
+    return nothing
 end
 
 include("inverse_iteration.jl")
