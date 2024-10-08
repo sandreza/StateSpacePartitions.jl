@@ -5,8 +5,10 @@ export StateSpacePartition
 using ProgressBars
 using Reexport, PrecompileTools
 
+include("Architectures.jl")
 include("Trees/Trees.jl")
 
+using .Architectures
 using .Trees
 
 struct StateSpacePartition{E, P}
@@ -14,9 +16,11 @@ struct StateSpacePartition{E, P}
     partitions::P 
 end
 
-function StateSpacePartition(trajectory; 
+function StateSpacePartition(trajectory;
+                             architecture = CPU(), 
                              method = Tree(), 
                              cells = nothing,
+                             chunk_size = size(trajectory)[2],
                              override = false)
 
     @info "determine partitioning function "
@@ -28,13 +32,13 @@ function StateSpacePartition(trajectory;
         @error "cells must be an integer"
     end
 
-    embedding = determine_partition(trajectory, method; override = override)
+    embedding = determine_partition(trajectory, method; override = override, architecture)
     partitions = zeros(Int64, size(trajectory)[2])
+    partitions = ChunkedArray(partitions, architecture; chunk_size)
+    chunked_trajectory = ChunkedArray(trajectory, architecture; chunk_size)
 
     @info "computing partition trajectory"
-    for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
-        partitions[i] = embedding(state)
-    end
+    embedding(partitions, chunked_trajectory)
 
     return StateSpacePartition(embedding, partitions)
 end

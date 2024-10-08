@@ -59,7 +59,7 @@ function split(trajectory, indices, n_min; numstates = 2)
 end
 
 # modification of code from Peter J. Schmid
-function unstructured_tree(trajectory, p_min; threshold = 2)
+function unstructured_tree(trajectory, p_min; threshold = 2, architecture = CPU())
     n = size(trajectory)[2]
     n_min = floor(Int, threshold * p_min * n)
     W, F, P1, edge_information = [collect(1:n)], [], [1], []
@@ -144,7 +144,7 @@ This function determines the partition of a trajectory into an unstructured tree
 
 * `embedding`: a `Tree` object
 """
-function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false) where S
+function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; override = false, architecture = CPU()) where S
     if typeof(tree_type.arguments) <: NamedTuple
         if haskey(tree_type.arguments, :minimum_probability)
             minimum_probability = tree_type.arguments.minimum_probability 
@@ -168,7 +168,7 @@ function determine_partition(trajectory, tree_type::Tree{Val{false}, S}; overrid
         @warn "minimum probabity too small, using 10x the reciprocal of the number of points"
         minimum_probability = 10 / size(trajectory)[2]
     end
-    F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global = unstructured_tree(trajectory, minimum_probability)
+    F, H, edge_information, parent_to_children, global_to_local, centers_list, CC, local_to_global = unstructured_tree(trajectory, minimum_probability; architecture)
     embedding = UnstructuredTree(global_to_local, centers_list, parent_to_children)
     return embedding
 end
