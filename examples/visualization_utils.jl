@@ -35,8 +35,8 @@ function graph_from_PI(PI)
     return node_labels, adj, adj_mod, length(PI)
 end
 
-function visualize_koopman_mode(trajectory, partition; mode = 2, colormap1 = :balance, colormap2 = :cyclic_mrybm_35_75_c68_n256, markersize = 10)
-    if (size(trajectory)[1] < 4) & (maximum(partition) < 4000)
+function visualize_koopman_mode(trajectory, partitions; mode = 2, colormap1 = :balance, colormap2 = :cyclic_mrybm_35_75_c68_n256, markersize = 10)
+    if (size(trajectory)[1] < 4) & (maximum(partitions) < 4000)
         generator_matrix = generator(partitions)
         eigenvalues, eigenvectors = eigen(generator_matrix')
         λ = reverse(eigenvalues)[mode]
@@ -44,7 +44,7 @@ function visualize_koopman_mode(trajectory, partition; mode = 2, colormap1 = :ba
         if ((imag(λ) / abs(λ)) < eps(100.0)) | (abs(λ) < eps(100.0))
             set_theme!(backgroundcolor = :black)
             w = real.(v)
-            koopman = [w[partition[i]] for i in eachindex(partition)]
+            koopman = [w[partitions[i]] for i in eachindex(partitions)]
             fig = Figure()
             ax = LScene(fig[1,1]; show_axis=false)
             scatter!(ax, trajectory, color=koopman, colormap= colormap1, markersize=markersize)
@@ -52,7 +52,7 @@ function visualize_koopman_mode(trajectory, partition; mode = 2, colormap1 = :ba
             return fig
         else
             set_theme!(backgroundcolor = :black)
-            koopman = [v[partition[i]] for i in eachindex(partition)]
+            koopman = [v[partitions[i]] for i in eachindex(partitions)]
             koopman_amp = abs.(koopman)
             koopman_phase = angle.(koopman)
             fig = Figure()
@@ -68,3 +68,5 @@ function visualize_koopman_mode(trajectory, partition; mode = 2, colormap1 = :ba
         return false 
     end
 end
+
+visualize_koopman_mode(trajectory, ssp::StateSpacePartition; mode = 2, colormap1 = :balance, colormap2 = :cyclic_mrybm_35_75_c68_n256, markersize = 10) = visualize_koopman_mode(trajectory, ssp.partitions; mode, colormap1, colormap2, markersize)

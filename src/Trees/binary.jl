@@ -1,8 +1,4 @@
-using KernelAbstractions: @kernel, @index
-using KernelAbstractions.Extras.LoopInfo: @unroll
-
 export extract_coarse_guess
-
 struct BinaryTree{S, T}
     centers::S
     levels::T
@@ -15,35 +11,6 @@ function (embedding::BinaryTree)(current_state)
         global_index = child_global_index(new_index, global_index)
     end
     return local_index(global_index, embedding.levels)
-end
-
-function (embedding::BinaryTree)(partitions, states)
-    worksize  = total_length(states)
-    workgroup = min(length(partitions), 256)
-
-    arch = architecture(partitions)
-    args = (partitions, states, embedding.centers, Val(embedding.levels))
-
-    launch_chunked_kernel!(arch, workgroup, worksize, _compute_binary_embedding!, args)
-
-    return nothing
-end
-
-@kernel function _compute_binary_embedding!(partitions, states, centers, ::Val{levels}) where levels
-    p = @index(Global, Linear)
-    
-    @inbounds begin
-        state = states[:, p]
-
-        global_index = 1 
-
-        @unroll for _ in 1:levels
-            new_index = argmin([norm(state - center) for center in centers[global_index]])
-            global_index = child_global_index(new_index, global_index)
-        end
-    
-        partitions[p] = local_index(global_index, levels)
-    end
 end
 
 # binary tree index juggling

@@ -22,11 +22,11 @@ Random.seed!(12345)
 end
 
 @testset "Full trajectory embedding" begin
+    Random.seed!(12345)
+
     states = 3
     trajectory = 10^2
     trajectory = randn(states, trajectory)
-
-    Random.seed!(12345)
 
     # Binary tree test
     state_space_partitions = StateSpacePartition(trajectory)

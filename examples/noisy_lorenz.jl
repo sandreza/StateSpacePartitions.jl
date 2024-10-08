@@ -15,8 +15,8 @@ for i in ProgressBar(2:iterations)
     trajectory[:, i] .= step.xⁿ⁺¹ .+ sqrt(dt) * randn(3)
 end
 
-method = Tree(false, 0.001/3)
+method = Tree(false, 0.001)
 state_space_partitions = StateSpacePartition(trajectory; method = method)
 
-
+length(union(state_space_partitions.partitions))
 visualize_koopman_mode(trajectory, state_space_partitions.partitions, colormap1 = :balance, mode = 4)
