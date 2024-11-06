@@ -275,22 +275,28 @@ probability_weights = empirical_count / sum(empirical_count)
 Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance )
 
 score = ScoreModel(Σmodel)
-
+ogcov = copy(adj_empirical_covariance)
+ogregularized = copy(adj_empirical_covariance)
+sigmamin = 0.01
+## regularized 
+for i in 1:length(empirical_count)
+    ogregularized[:, :, i] .= ogcov[:, :, i] + sigmamin * I
+end
 ##
-sigma_2 = 0.1
-adj_empirical_covariance .= sigma_2
+sigma_2 = sigmamin
+adj_empirical_covariance .= ogregularized # sigma_2
 Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance)
-
+score = ScoreModel(Σmodel)
 σ²emp = cov(trajectory')
 cov(Σmodel)
 cov(δmodel)
 xs = range(-2, 2, length=100)
 scorevals = [score([x])[1] for x in xs]
-scorevals2 = [score([x], sigma_2)[1] for x in xs]
+scorevals2 = [score([x], sqrt(sigma_2))[1] for x in xs]
 fig = Figure()
 ax = Axis(fig[1, 1])
 scatter!(ax, xs, scorevals, color = (:red, 0.5))
-lines!(ax, xs, scorevals2, color=:red)
+# lines!(ax, xs, scorevals2, color=:red)
 lines!(ax, xs, -xs / σ²emp, color=:blue)
 display(fig)
 
