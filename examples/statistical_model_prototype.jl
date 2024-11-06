@@ -276,20 +276,27 @@ probability_weights = empirical_count / sum(empirical_count)
 
 score = ScoreModel(Σmodel)
 
+##
+sigma_2 = 0.1
+adj_empirical_covariance .= sigma_2
+Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance)
+
 σ²emp = cov(trajectory')
 cov(Σmodel)
 cov(δmodel)
-xs = range(-5, 5, length=100)
+xs = range(-2, 2, length=100)
 scorevals = [score([x])[1] for x in xs]
+scorevals2 = [score([x], sigma_2)[1] for x in xs]
 fig = Figure()
 ax = Axis(fig[1, 1])
-scatter!(ax, xs, scorevals)
-lines!(ax, xs, -xs / σ²emp, color=:red)
+scatter!(ax, xs, scorevals, color = (:red, 0.5))
+lines!(ax, xs, scorevals2, color=:red)
+lines!(ax, xs, -xs / σ²emp, color=:blue)
 display(fig)
 
 ##
 sum([Σmodel.covariances[:, :, i] * Σmodel.weights[i] for i in eachindex(Σmodel.weights)])
 
 ##
-Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance)
+
 GLMakie.density(rand(Σmodel, 1000000)[:])
