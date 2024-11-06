@@ -89,7 +89,7 @@ end
 # adjust 
 adj_empirical_centers = empirical_centers ./ reshape(empirical_count, 1, length(empirical_count))
 adj_empirical_covariance = empirical_covariance ./ reshape(empirical_count .- 1, 1, 1, length(empirical_count))
-for i in 1:length(probability_weights)
+for i in 1:length(empirical_count)
     adj_empirical_covariance[:, :, i] .-= (adj_empirical_centers[:, i] * adj_empirical_centers[:, i]') * empirical_count[i] / (empirical_count[i] - 1)
 end
 probability_weights = empirical_count / sum(empirical_count)
@@ -218,10 +218,28 @@ function (score::ScoreModel)(x)
     return score_value / denominator[1]
 end
 
+function (score::ScoreModel)(x, sigma)
+    n = size(score.probability_model.means)[1]
+    m = size(score.probability_model.means)[2]
+    score_value = zeros(n)
+    denominator = [0.0]
+    for i in 1:m
+        Δ = score.probability_model.means[:, i] - x
+        U = exp(-(0.5 /sigma^2) * Δ' * Δ)
+        weightedU = score.probability_model.weights[i] * U
+        score_value .+= weightedU * Δ
+        denominator .+= weightedU
+    end
+    return score_value / ( denominator[1] * sigma^2)
+end
+
 ##
 dt = 0.01
 iterations = 10^6
 
+function linear(x)
+    return -x
+end
 
 trajectory = zeros(1, iterations)
 trajectory[:, 1] .= [0.0]
@@ -231,7 +249,7 @@ for i in ProgressBar(2:iterations)
     trajectory[:, i] .= step.xⁿ⁺¹ .+ sqrt(dt) * randn(1)
 end
 
-method = Tree(false, 0.1)
+method = Tree(false, 0.01)
 
 emb, pr, ms, partitions = determine_statistical_model(trajectory, method)
 
@@ -248,21 +266,30 @@ end
 # adjust 
 adj_empirical_centers = empirical_centers ./ reshape(empirical_count, 1, length(empirical_count))
 adj_empirical_covariance = empirical_covariance ./ reshape(empirical_count .- 1, 1, 1, length(empirical_count))
-for i in 1:length(probability_weights)
+for i in 1:length(empirical_count)
     adj_empirical_covariance[:, :, i] .-= (adj_empirical_centers[:, i] * adj_empirical_centers[:, i]') * empirical_count[i] / (empirical_count[i] - 1)
 end
 probability_weights = empirical_count / sum(empirical_count)
 
 δmodel = DeltaFunction(probability_weights, adj_empirical_centers)
-Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance * 20)
+Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance )
 
 score = ScoreModel(Σmodel)
 
-σemp = cov(trajectory')
-xs = range(-3, 3, length=100)
+σ²emp = cov(trajectory')
+cov(Σmodel)
+cov(δmodel)
+xs = range(-5, 5, length=100)
 scorevals = [score([x])[1] for x in xs]
 fig = Figure()
 ax = Axis(fig[1, 1])
 scatter!(ax, xs, scorevals)
-lines!(ax, xs, -xs / σemp^2, color=:red)
+lines!(ax, xs, -xs / σ²emp, color=:red)
 display(fig)
+
+##
+sum([Σmodel.covariances[:, :, i] * Σmodel.weights[i] for i in eachindex(Σmodel.weights)])
+
+##
+Σmodel = GeneralGaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance)
+GLMakie.density(rand(Σmodel, 1000000)[:])
