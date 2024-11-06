@@ -158,8 +158,14 @@ adj_empirical_centers[:, indval] - check1
 cov1 = cov(ind1')
 adj_empirical_covariance[:, :, indval]
 
-Nsamples = 100
+Nsamples = 10000
 samples = zeros(size(trajectory)[1], Nsamples)
 for i in 1:Nsamples
     samples[:, i] = rand(Σmodel)
 end
+scatter(samples)
+
+##
+totcov = cov(trajectory')
+cov(Σmodel)
+cov(δmodel)
