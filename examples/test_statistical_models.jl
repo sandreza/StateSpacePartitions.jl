@@ -1,6 +1,6 @@
 using Enzyme
 ##
-cells = round(Int, 1000 * 1.4)
+cells = round(Int, 10000 * 1.4)
 ssp = StateSpacePartition(trajectory; cells)
 ##
 Σmodel = GaussianMixture(ssp, trajectory)
@@ -42,7 +42,22 @@ for i in 1:3
     hist!(ax, trajectory[i, :], color = (:blue, 0.5), bins = 100, normalization = :pdf)
 end
 display(fig)
-
+##
+fig = Figure() 
+for i in 1:3
+    for j in 1:3
+        ax = Axis(fig[i, j])
+        if i == j 
+            hist!(ax, trajectory[i, :], bins = 30, normalization = :pdf, color = :red)
+            density!(ax, model_samples[i, :][:], color = (:blue, 0.5))
+        elseif i > j 
+            scatter!(ax, model_samples[j, :], model_samples[i, :], color = :blue, markersize = 1.0)
+        else
+            scatter!(ax, trajectory[i, :], trajectory[j, :], color = :red, markersize = 1.0)
+        end
+    end
+end
+display(fig)
 
 ## 
 # Potential well test
@@ -78,12 +93,13 @@ lines!(ax, xs, normalized_density)
 display(fig)
 
 ##
-cells = round(Int, 1000 * 1.5)
+cells = round(Int, 100 * 1.5)
 ssp = StateSpacePartition(reshape(x₀, (1, Nₑ)); cells)
 ##
 Σmodel = GaussianMixture(ssp, reshape(x₀, (1, Nₑ)))
-scaled_inflate!(Σmodel, 4.0)
-# general_inflate!(Σmodel, reshape([cov(x₀)], (1, 1)) * 0.04)
+# scaled_inflate!(Σmodel, 4.0)
+average_covariance(Σmodel)
+# general_inflate!(Σmodel, reshape([cov(x₀)], (1, 1)) * 0.01)
 
 fig = Figure() 
 ax = Axis(fig[1,1]) 
@@ -92,11 +108,15 @@ lines!(ax, xs, normalized_density)
 GLMakie.density!(ax, rand(Σmodel, 100000)[:], color = (:blue, 0.1), strokecolor = :blue,  strokewidth = 3)
 display(fig)
 ##
+zlist = randn(1000)
+scorevals = [score([z * 0.01]) for z in zlist]
+##
 score = ScoreModel(Σmodel)
 
 model_score_values = [score([x])[1] for x in xs]
-mollified_model_score_values = [score([x], 0.1)[1] for x in xs]
+mollified_model_score_values = [score([x], 0.2)[1] for x in xs]
 model_score_values_on_data = [score([x])[1] for x in x₀[1:100:end]]
+model_score_values_on_mean = [score([x])[1] for x in  Σmodel.means[:]]
 exact_score_values = [∇V([x])[1] for x in xs]
 
 fig = Figure() 
@@ -106,6 +126,7 @@ ylims!(ax, -2, 2)
 lines!(ax, xs, exact_score_values, color = :red)
 lines!(ax, xs, mollified_model_score_values, color = :green)
 scatter!(ax, xs, model_score_values, color = :blue)
+scatter!(ax, Σmodel.means[:], model_score_values_on_mean, color = :orange)
 
 ##
 
