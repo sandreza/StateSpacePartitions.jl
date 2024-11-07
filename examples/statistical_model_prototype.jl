@@ -72,16 +72,15 @@ end
 
 ##
 # include the lorenz file here
-method = Tree(false, 0.001)
-
-emb, pr, ms, partitions = determine_statistical_model(trajectory, method)
-
-empirical_centers = zeros(size(trajectory)[1], maximum(partitions))
-empirical_covariance = zeros(size(trajectory)[1], size(trajectory)[1], maximum(partitions))
-empirical_count = zeros(Int64, maximum(partitions))
+# emb, pr, ms, partitions = determine_statistical_model(trajectory, method)
+ssp = StateSpacePartition(trajectory; cells = 140)
+## 
+empirical_centers = zeros(size(trajectory)[1], maximum(ssp.partitions))
+empirical_covariance = zeros(size(trajectory)[1], size(trajectory)[1], maximum(ssp.partitions))
+empirical_count = zeros(Int64, maximum(ssp.partitions))
 for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
     cell_index = emb(state)
-    partitions[i] = cell_index
+    partitions[i] = cell_index # overwritten
     empirical_count[cell_index] += 1
     empirical_centers[:, cell_index] .+= state
     empirical_covariance[:, :, cell_index] .+= state * state'
