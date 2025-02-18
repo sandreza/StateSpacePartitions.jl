@@ -1,14 +1,50 @@
 using Enzyme
 ##
-cells = round(Int, 10000 * 1.4)
+cells = round(Int, 100 * 1.4)
 ssp = StateSpacePartition(trajectory; cells)
 ##
 Σmodel = GaussianMixture(ssp, trajectory)
+scaled_inflate!(Σmodel, 2)
+# isotropic_inflate!(Σmodel, 1.0)
+# covmodel = cov(Σmodel)
+# determinant_inflate!(Σmodel)
+# covmodel = cov(Σmodel)
+# scaled_inflate!(Σmodel, 2)
+# covmodel = cov(Σmodel)
 # general_inflate!(Σmodel, cov(trajectory') * 0.01)
 # isotropic_inflate!(Σmodel, 0.1)
 # scaled_inflate!(Σmodel, 2.0)
-δmodel = DeltaFunction(ssp)
+δmodel = DeltaFunction(ssp, trajectory)
 ## 
+probabilities = [Σmodel(x⃗) for x⃗ in eachcol(trajectory[:, 1:100:end])] 
+##
+cmap = :thermal
+n = size(trajectory[:, 1:100:end], 2)
+alphas = probabilities / maximum(probabilities) * 0.1
+cmap_alpha = resample_cmap(cmap, n; alpha = alphas)
+points3d = [Point3f(x⃗[1], x⃗[2], x⃗[3]) for x⃗ in eachcol(trajectory[:, 1:100:end])];
+meshscatter(vec(points3d); color = vec(probabilities), marker = Rect3f(Vec3f(-10), Vec3f(20)), colormap = cmap_alpha)
+##
+xrange = range(extrema(trajectory[1, :])..., length = 80)
+yrange = range(extrema(trajectory[2, :])..., length = 80)
+zrange = range(extrema(trajectory[3, :])..., length = 80)
+isotropic_sample_probability = [Σmodel([x, y, z]) for x in xrange, y in yrange, z in zrange]
+
+scatter(xrange, sum(isotropic_sample_probability, dims = (2, 3))[:])
+##
+cmap = :thermal # :linear_kryw_0_100_c71_n256
+cmapa = reverse(RGBAf.(to_colormap(cmap)))
+cmap = vcat(fill(RGBAf(0, 0, 0, 0), 1), cmapa[1:256])
+volume(isotropic_sample_probability, algorithm = :absorption, absorption=5.0f0, colormap=cmap, transparency=true)
+##
+maxprob = maximum(probabilities)
+colors = [(:red, probability/maxprob ) for probability in probabilities]
+##
+sortedxs = sort(trajectory[1, 1:100:end])
+perxs = sortperm(trajectory[1, 1:100:end])
+scatter(trajectory[:, 1:100:end], color = colors)
+lines(sortedxs, probabilities[perxs])
+##
 cov(Σmodel) - cov(δmodel) - average_covariance(Σmodel)
 cov(trajectory')
 scatter(rand(Σmodel, 1000))
@@ -59,91 +95,5 @@ for i in 1:3
 end
 display(fig)
 
-## 
-# Potential well test
-function V(x)
-    return (x[1]^2 - 1)^2/4 # + x[1] * 0.1
-end
-
-∇V(x) =  -gradient(Enzyme.Reverse, V, x)
-∇V([2.0])
-##
-ϵ = sqrt(2)
-Nₜ = 1000
-Nₑ = 100000
-Δt = 0.01
-x₀ = randn(Nₑ)
-for t in ProgressBar(1:Nₜ)
-    𝒩 = randn(Nₑ)
-    for ω in 1:Nₑ
-        x₀[ω] = x₀[ω] + Δt * ∇V([x₀[ω]])[1] + ϵ  * √Δt * 𝒩[ω]
-    end
-end
-hist(x₀)
-
-xs = range(-3, 3, length = 1000)
-unnormalized_density = exp.(-V.(-xs))
-Z = sum(unnormalized_density) * (xs[end] - xs[end-1])
-normalized_density = unnormalized_density / Z
-
-fig = Figure() 
-ax = Axis(fig[1,1]) 
-GLMakie.density!(ax, x₀[:], color = (:red, 0.1), strokecolor = :red,  strokewidth = 3)
-lines!(ax, xs, normalized_density)
-display(fig)
 
 ##
-cells = round(Int, 100 * 1.5)
-ssp = StateSpacePartition(reshape(x₀, (1, Nₑ)); cells)
-##
-Σmodel = GaussianMixture(ssp, reshape(x₀, (1, Nₑ)))
-# scaled_inflate!(Σmodel, 4.0)
-average_covariance(Σmodel)
-# general_inflate!(Σmodel, reshape([cov(x₀)], (1, 1)) * 0.01)
-
-fig = Figure() 
-ax = Axis(fig[1,1]) 
-GLMakie.density!(ax, x₀[:], color = (:red, 0.1), strokecolor = :red,  strokewidth = 3)
-lines!(ax, xs, normalized_density)
-GLMakie.density!(ax, rand(Σmodel, 100000)[:], color = (:blue, 0.1), strokecolor = :blue,  strokewidth = 3)
-display(fig)
-##
-zlist = randn(1000)
-scorevals = [score([z * 0.01]) for z in zlist]
-##
-score = ScoreModel(Σmodel)
-
-model_score_values = [score([x])[1] for x in xs]
-mollified_model_score_values = [score([x], 0.2)[1] for x in xs]
-model_score_values_on_data = [score([x])[1] for x in x₀[1:100:end]]
-model_score_values_on_mean = [score([x])[1] for x in  Σmodel.means[:]]
-exact_score_values = [∇V([x])[1] for x in xs]
-
-fig = Figure() 
-ax = Axis(fig[1,1])
-xlims!(ax, -1.2, 1.2)
-ylims!(ax, -2, 2)
-lines!(ax, xs, exact_score_values, color = :red)
-lines!(ax, xs, mollified_model_score_values, color = :green)
-scatter!(ax, xs, model_score_values, color = :blue)
-scatter!(ax, Σmodel.means[:], model_score_values_on_mean, color = :orange)
-
-##
-
-fig = Figure()
-ax = Axis(fig[1, 1])
-cell_number = 1
-fixed_cell_samples_1 = samples_fixed_cell(Σmodel, cell_number, 1276)[1, :]
-fixed_cell_samples_trajectory_1 = x₀[ssp.partitions .== cell_number]
-GLMakie.density!(ax, fixed_cell_samples_1, color = (:red, 0.1), strokecolor = :red,  strokewidth = 3)
-hist!(ax, fixed_cell_samples_trajectory_1, color = (:blue, 0.5), bins = 100, normalization = :pdf)
-cell_number = 2
-fixed_cell_samples_2 = samples_fixed_cell(Σmodel, cell_number, 1276)[1, :]
-fixed_cell_samples_trajectory_2 = x₀[ssp.partitions .== cell_number]
-GLMakie.density!(ax, fixed_cell_samples_2, color = (:red, 0.1), strokecolor = :red,  strokewidth = 3)
-hist!(ax, fixed_cell_samples_trajectory_2, color = (:blue, 0.5), bins = 100, normalization = :pdf)
-ax = Axis(fig[1, 2])
-# combine 
-hist!(ax, vcat(fixed_cell_samples_trajectory_1, fixed_cell_samples_trajectory_2), color = (:blue, 0.5), bins = 100, normalization = :pdf)
-GLMakie.density!(ax, vcat(fixed_cell_samples_1, fixed_cell_samples_2), color = (:red, 0.1), strokecolor = :red,  strokewidth = 3)
-display(fig)
