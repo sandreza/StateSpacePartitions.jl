@@ -30,12 +30,13 @@ function DeltaFunction(trajectory::Matrix, cells::Int)
     return DeltaFunction(probability_weights, adj_empirical_centers)
 end
 
-function DeltaFunction(state_space_partition::StateSpacePartition)
+function DeltaFunction(state_space_partition::StateSpacePartition, trajectory::Matrix)
     empirical_centers = zeros(size(trajectory)[1], maximum(state_space_partition.partitions))
     empirical_count = zeros(Int64, maximum(state_space_partition.partitions))
+    partitions = zeros(Int64, size(trajectory)[2])
     for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
-        cell_index = state_space_partition.partitions[i]
-        partitions[i] = cell_index # overwritten
+        cell_index = state_space_partition.embedding(state)
+        partitions[i] = cell_index 
         empirical_count[cell_index] += 1
         empirical_centers[:, cell_index] .+= state
     end
@@ -83,6 +84,14 @@ function cov(δmodel::DeltaFunction)
     return ensemble_cov
 end
 
+function ensemble_mean(g::Function, δmodel::DeltaFunction)
+    ensemble_mean = zeros(size(δmodel.means)[1])
+    for i in 1:size(δmodel.means)[2]
+        ensemble_mean .+= δmodel.weights[i] * g(δmodel.means[:, i])
+    end
+    return ensemble_mean
+end
+
 
 struct GaussianMixture{W, M, C}
     weights::W
@@ -95,6 +104,7 @@ function GaussianMixture(trajectory::Matrix, cells::Int)
     empirical_centers = zeros(size(trajectory)[1], maximum(state_space_partition.partitions))
     empirical_covariance = zeros(size(trajectory)[1], size(trajectory)[1], maximum(state_space_partition.partitions))
     empirical_count = zeros(Int64, maximum(state_space_partition.partitions))
+    partitions = zeros(Int64, size(trajectory)[2])
     for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
         cell_index = state_space_partition.partitions[i]
         partitions[i] = cell_index # overwritten
@@ -112,11 +122,12 @@ function GaussianMixture(trajectory::Matrix, cells::Int)
 end
 
 function GaussianMixture(state_space_partition::StateSpacePartition, trajectory::Matrix)
+    partitions = zeros(Int64, size(trajectory)[2])
     empirical_centers = zeros(size(trajectory)[1], maximum(state_space_partition.partitions))
     empirical_covariance = zeros(size(trajectory)[1], size(trajectory)[1], maximum(state_space_partition.partitions))
     empirical_count = zeros(Int64, maximum(state_space_partition.partitions))
     for (i, state) in ProgressBar(enumerate(eachcol(trajectory)))
-        cell_index = state_space_partition.partitions[i]
+        cell_index = state_space_partition.embedding(state)
         partitions[i] = cell_index # overwritten
         empirical_count[cell_index] += 1
         empirical_centers[:, cell_index] .+= state
@@ -131,20 +142,19 @@ function GaussianMixture(state_space_partition::StateSpacePartition, trajectory:
     return GaussianMixture(probability_weights, adj_empirical_centers, adj_empirical_covariance)
 end
 
-function (score::GaussianMixture)(x)
-    n = size(GaussianMixture.means)[1]
-    m = size(GaussianMixture.means)[2]
-    score_value = zeros(n)
-    denominator = [0.0]
+function (probability::GaussianMixture)(x)
+    n = size(probability.means)[1]
+    m = size(probability.means)[2]
+    probability_value = [0.0]
     for i in 1:m
-        Δ = GaussianMixture.means[:, i] - x
-        Σ⁻¹Δ = score.inverse_covariances[:, :, i] * Δ
-        normalization = sqrt(det(2π * score.probability_model.covariances[:, :, i]))
+        Δ = probability.means[:, i] .- x
+        Σ⁻¹Δ = pinv(probability.covariances[:, :, i]) * Δ
+        normalization = sqrt(det(2π * probability.covariances[:, :, i]))
         U = exp(-0.5 * Δ' * Σ⁻¹Δ) / normalization
-        weightedU = score.probability_model.weights[i] * U 
+        weightedU = probability.weights[i] * U 
         probability_value .+= weightedU 
     end
-    return probability_value
+    return probability_value[1]
 end
 
 function isotropic_inflate!(Σmodel::GaussianMixture, factor::Real)
